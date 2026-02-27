@@ -1,0 +1,122 @@
+.historial {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.filters {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filterSelect,
+.filterInput {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 14px;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+}
+
+.filterSelect:focus,
+.filterInput:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.tableWrap {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: 10px var(--space-lg);
+    text-align: left;
+    font-size: 0.85rem;
+}
+
+.table th {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-elevated);
+}
+
+.table td {
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.table tr:hover td {
+    background: var(--bg-surface-hover);
+}
+
+.claveText {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: var(--radius-full);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.badgeSuccess {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.badgeDanger {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+.badgeWarning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.badgeInfo {
+    background: var(--color-info-bg);
+    color: var(--color-info);
+}
+
+.actionBtn {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.78rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all var(--transition-fast);
+}
+
+.actionBtn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+}

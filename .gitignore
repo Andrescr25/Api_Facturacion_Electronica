@@ -1,0 +1,13 @@
+node_modules
+dist
+
+# Environment variables
+.env
+.env.*
+
+# Prisma generated
+/src/generated/prisma
+
+# Temp files
+*.txt
+*.log

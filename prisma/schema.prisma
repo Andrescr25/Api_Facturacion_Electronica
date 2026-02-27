@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model EmisorCredenciales {
+  id              String   @id @default(uuid())
+  identificacion  String   @unique
+  nombre          String
+  usuarioAtv      String
+  passwordAtv     String
+  certificadoP12  Bytes?
+  pinCertificado  String?
+  consecutivoFe   Int      @default(1)
+  consecutivoNd   Int      @default(1)
+  consecutivoNc   Int      @default(1)
+  consecutivoTe   Int      @default(1)
+  consecutivoCce  Int      @default(1)
+  consecutivoCpce Int      @default(1)
+  consecutivoRce  Int      @default(1)
+  
+  documentos      DocumentoElectronico[]
+}
+
+model DocumentoElectronico {
+  id                String   @id @default(uuid())
+  emisorId          String
+  emisor            EmisorCredenciales @relation(fields: [emisorId], references: [id])
+  claveNumerica     String?  @unique @db.VarChar(50)
+  numeroConsecutivo String?  @db.VarChar(20)
+  tipoDocumento     String   @db.Char(2)
+  fechaEmision      DateTime @default(now())
+  montoTotal        Decimal  @db.Decimal(18, 5)
+  estadoInterno     EstadoDocumento @default(CREADO)
+  intentosEnvio     Int      @default(0)
+  pdfUrl            String?
+  
+  xmlAlmacen        XmlAlmacen?
+  logs              LogsTransaccion[]
+}
+
+model XmlAlmacen {
+  documentoId       String   @id
+  documento         DocumentoElectronico @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  xmlGenerado       String?  @db.Text
+  xmlFirmado        String?  @db.Text
+  xmlRespuestaMh    String?  @db.Text
+  acuseRecibo       String?
+}
+
+model LogsTransaccion {
+  id            String   @id @default(uuid())
+  documentoId   String
+  documento     DocumentoElectronico @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  accion        String
+  resultadoJson String?  @db.Text
+  timestamp     DateTime @default(now())
+}
+
+enum EstadoDocumento {
+  CREADO
+  FIRMANDO
+  ENVIADO
+  ACEPTADO
+  RECHAZADO
+}
