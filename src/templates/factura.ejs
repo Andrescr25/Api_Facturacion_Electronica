@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Factura Electrónica</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; line-height: 1.4; padding: 20px; font-size: 14px; }
+        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0056b3; padding-bottom: 10px; margin-bottom: 20px; }
+        .company-info h1 { margin: 0; color: #0056b3; font-size: 24px; }
+        .company-info p { margin: 2px 0; }
+        .invoice-details { text-align: right; }
+        .invoice-details h2 { margin: 0; color: #555; font-size: 20px; }
+        .invoice-details p { margin: 2px 0; font-weight: bold; }
+        .clave-box { background-color: #f8f9fa; border: 1px solid #ddd; padding: 8px; font-size: 12px; margin-top: 10px; word-break: break-all; }
+        .section { margin-bottom: 20px; }
+        .section-title { font-weight: bold; font-size: 16px; border-bottom: 1px solid #ccc; margin-bottom: 10px; padding-bottom: 5px; color: #0056b3; }
+        .client-info p { margin: 4px 0; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        .totals-table { width: 40%; float: right; }
+        .totals-table th { background-color: transparent; border: none; text-align: right; padding-right: 15px; }
+        .totals-table td { border-left: 1px solid #ddd; text-align: right; }
+        .totals-table .grand-total th, .totals-table .grand-total td { font-weight: bold; font-size: 16px; border-top: 2px solid #0056b3; }
+        .footer { clear: both; margin-top: 40px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #ddd; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="company-info">
+            <h1><%= emisor.nombre %></h1>
+            <p><strong>Cédula:</strong> <%= emisor.identificacion %></p>
+            <p>Costa Rica</p>
+        </div>
+        <div class="invoice-details">
+            <h2><%= tipoDocumentoNombre %></h2>
+            <p>Consecutivo: <%= consecutivo %></p>
+            <p>Fecha: <%= fechaEmision %></p>
+            <div class="clave-box">
+                <strong>Clave Numérica:</strong><br>
+                <%= clave %>
+            </div>
+        </div>
+    </div>
+
+    <% if (receptor) { %>
+    <div class="section client-info">
+        <div class="section-title">Cliente</div>
+        <p><strong>Nombre:</strong> <%= receptor.nombre %></p>
+        <p><strong>Identificación:</strong> <%= receptor.identificacion %></p>
+        <% if (receptor.correoElectronico) { %>
+            <p><strong>Correo:</strong> <%= receptor.correoElectronico %></p>
+        <% } %>
+    </div>
+    <% } %>
+
+    <div class="section">
+        <div class="section-title">Detalle de Líneas</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Línea</th>
+                    <th>Código</th>
+                    <th>Descripción</th>
+                    <th>Cantidad</th>
+                    <th>Precio Uni.</th>
+                    <th>Desc.</th>
+                    <th>Subtotal</th>
+                    <th>Imp.</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% lineas.forEach(function(linea, index) { %>
+                <tr>
+                    <td><%= index + 1 %></td>
+                    <td><%= linea.codigoCabys %></td>
+                    <td><%= linea.detalle %></td>
+                    <td><%= linea.cantidad %> <%= linea.unidadMedida %></td>
+                    <td><%= moneda %> <%= linea.precioUnitario.toFixed(2) %></td>
+                    <td><%= moneda %> <%= (linea.descuento ? linea.descuento.monto : 0).toFixed(2) %></td>
+                    <td><%= moneda %> <%= linea.subTotal.toFixed(2) %></td>
+                    <td><%= moneda %> <%= (linea.impuestoNeto || 0).toFixed(2) %></td>
+                    <td><%= moneda %> <%= linea.montoTotalLinea.toFixed(2) %></td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section" style="overflow: hidden;">
+        <table class="totals-table">
+            <tr>
+                <th>Total Gravado:</th>
+                <td><%= moneda %> <%= resumen.totalGravado.toFixed(2) %></td>
+            </tr>
+            <tr>
+                <th>Total Exento:</th>
+                <td><%= moneda %> <%= resumen.totalExento.toFixed(2) %></td>
+            </tr>
+            <tr>
+                <th>Total Descuentos:</th>
+                <td><%= moneda %> <%= resumen.totalDescuentos.toFixed(2) %></td>
+            </tr>
+            <tr>
+                <th>Total Venta Neta:</th>
+                <td><%= moneda %> <%= resumen.totalVentaNeta.toFixed(2) %></td>
+            </tr>
+            <tr>
+                <th>Total Impuestos:</th>
+                <td><%= moneda %> <%= resumen.totalImpuesto.toFixed(2) %></td>
+            </tr>
+            <tr class="grand-total">
+                <th>Total Comprobante:</th>
+                <td><%= moneda %> <%= resumen.totalComprobante.toFixed(2) %></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>Autorizada mediante resolución Nº DGT-R-48-2016 del 07 de octubre de 2016 de la Dirección General de Tributación.</p>
+        <p>Generado automáticamente - Este documento es una representación impresa de un comprobante electrónico.</p>
+    </div>
+
+</body>
+</html>
