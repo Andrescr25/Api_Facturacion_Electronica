@@ -1,13 +1,7 @@
 node_modules
-dist
-
-# Environment variables
+# Keep environment variables out of version control
 .env
-.env.*
 
-# Prisma generated
 /src/generated/prisma
 
-# Temp files
-*.txt
-*.log
+/src/generated/prisma
