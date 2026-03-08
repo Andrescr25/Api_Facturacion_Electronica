@@ -15,6 +15,8 @@ interface ApiKey {
 export default function ApiKeys() {
     const [keys, setKeys] = useState<ApiKey[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [newKeyName, setNewKeyName] = useState('');
     const emisorIdMock = "tu-emisor-id"; // TODO: get from AuthContext
 
     const fetchKeys = async () => {
@@ -39,14 +41,18 @@ export default function ApiKeys() {
     };
 
     const handleCreate = async () => {
-        const nombre = prompt('Ingresa un nombre para esta API Key (ej: Producción, Servidor Pruebas):');
-        if (!nombre) return;
+        if (!newKeyName.trim()) {
+            alert('Debes ingresar un nombre para la API Key');
+            return;
+        }
 
         try {
             await axios.post('http://localhost:3000/api/keys', {
                 emisorId: emisorIdMock,
-                nombre
+                nombre: newKeyName.trim()
             });
+            setNewKeyName('');
+            setShowModal(false);
             fetchKeys();
         } catch (error) {
             console.error('Error creating API key', error);
@@ -75,7 +81,7 @@ export default function ApiKeys() {
             <div className={styles.card}>
                 <div className={styles.cardHeader}>
                     <span className={styles.cardTitle}>Tus API Keys</span>
-                    <button className={styles.createBtn} onClick={handleCreate}>
+                    <button className={styles.createBtn} onClick={() => setShowModal(true)}>
                         <Plus size={16} />
                         Crear nueva key
                     </button>
@@ -115,6 +121,34 @@ export default function ApiKeys() {
                     </ul>
                 )}
             </div>
+
+            {/* Modal para Crear API Key */}
+            {showModal && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
+                        <div className={styles.modalHeader}>
+                            <h3>Crear Nueva API Key</h3>
+                            <button className={styles.closeModalBtn} onClick={() => setShowModal(false)}>&times;</button>
+                        </div>
+                        <div className={styles.modalBody}>
+                            <label htmlFor="newKeyName">Nombre de la API Key</label>
+                            <input
+                                type="text"
+                                id="newKeyName"
+                                className={styles.inputField}
+                                placeholder="ej: Producción, Servidor Pruebas"
+                                value={newKeyName}
+                                onChange={(e) => setNewKeyName(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+                        <div className={styles.modalFooter}>
+                            <button className={styles.cancelBtn} onClick={() => setShowModal(false)}>Cancelar</button>
+                            <button className={styles.confirmBtn} onClick={handleCreate}>Crear Key</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

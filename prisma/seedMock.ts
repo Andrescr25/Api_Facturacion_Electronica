@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../src/utils/prismaClient';
 
 async function main() {
     const defaultEmisorId = "tu-emisor-id";

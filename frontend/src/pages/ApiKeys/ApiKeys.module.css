@@ -131,3 +131,124 @@
 .deleteBtn:hover {
     background: var(--color-danger-bg);
 }
+
+/* ================================= */
+/* Modal Styles                      */
+/* ================================= */
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modalContent {
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+.modalHeader {
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modalHeader h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.closeModalBtn {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.closeModalBtn:hover {
+    color: var(--text-primary);
+}
+
+.modalBody {
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.modalBody label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.inputField {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-body);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color var(--transition-fast);
+}
+
+.inputField:focus {
+    border-color: var(--color-primary);
+}
+
+.modalFooter {
+    padding: var(--space-md) var(--space-lg);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-md);
+}
+
+.cancelBtn {
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.cancelBtn:hover {
+    background: var(--bg-elevated);
+}
+
+.confirmBtn {
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    background: var(--color-primary);
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.confirmBtn:hover {
+    background: var(--color-primary-hover);
+}
