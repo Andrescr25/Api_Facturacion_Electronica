@@ -2,10 +2,20 @@
  * Tipos base para la construcción de Comprobantes Electrónicos
  * Basado en Anexo y Estructura XSD v4.3 - Ministerio de Hacienda CR
  */
+import {
+    TipoIdentificacionType,
+    CodigoImpuestoType,
+    TarifaIVAType,
+    UnidadMedidaType,
+    CondicionVentaType,
+    MedioPagoType,
+    MotivoReferenciaNCType,
+    TipoDocumentoAsociadoType
+} from './CatalogoHacienda';
 
 export interface Receptor {
     nombre: string;
-    tipoIdentificacion: '01' | '02' | '03' | '04'; // 01:Física, 02:Jurídica, 03:DIMEX, 04:NITE
+    tipoIdentificacion: TipoIdentificacionType;
     identificacion: string;
     correoElectronico?: string;
     ubicacion?: {
@@ -18,8 +28,8 @@ export interface Receptor {
 }
 
 export interface Impuesto {
-    codigo: string;       // Ej. '01' para IVA
-    codigoTarifa: string; // Ej. '08' para Tarifa General 13%
+    codigo: CodigoImpuestoType;       // Ej. '01' para IVA
+    codigoTarifa: TarifaIVAType; // Ej. '08' para Tarifa General 13%
     tarifa: number;       // Ej. 13.0
     monto: number;
 }
@@ -28,7 +38,7 @@ export interface LineaDetalle {
     numeroLinea: number;
     codigoCabys: string;        // Catálogo de Bienes y Servicios (13 dígitos)
     cantidad: number;
-    unidadMedida: string;       // Ej. 'Unid', 'Sp', 'm', etc.
+    unidadMedida: UnidadMedidaType;       // Ej. 'Unid', 'Sp', 'm', etc.
     detalle: string;            // Descripción del producto/servicio
     precioUnitario: number;
     montoTotal: number;         // cantidad * precioUnitario
@@ -67,11 +77,11 @@ export interface CreacionFacturaRequest {
     caja: number;
 
     // Condición de venta: 01-Contado, 02-Crédito, etc.
-    condicionVenta: '01' | '02' | '03' | '04' | '05' | '99';
+    condicionVenta: CondicionVentaType;
     plazoCredito?: number;      // Días
 
     // Medio de pago: 01-Efectivo, 02-Tarjeta, 03-Cheque, 04-Transferencia, etc.
-    medioPago: string[];
+    medioPago: MedioPagoType[];
 
     receptor?: Receptor;        // Opcional en Tiquetes, Obligatorio en Facturas
     lineasDetalle: LineaDetalle[];
@@ -82,10 +92,10 @@ export interface CreacionFacturaRequest {
 }
 
 export interface Referencia {
-    tipoDocumento: string; // Ej: '01' (Factura), '02' (Nota de Débito), etc.
+    tipoDocumento: TipoDocumentoAsociadoType; // Ej: '01' (Factura), '02' (Nota de Débito), etc.
     numeroDocumento: string; // Clave de 50 dígitos del documento a afectar
     fechaEmision: string;
-    codigo: string; // '01'-Anula Doc de Referencia, '02'-Corrige texto doc ref, '03'-Corrige monto, '04'-Referencia a otro doc, '05'-Sustituye comprobante provisional, '99'-Otros
+    codigo: MotivoReferenciaNCType; // Razón de la referencia
     razon: string;
 }
 

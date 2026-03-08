@@ -1,24 +1,57 @@
-import { useState } from 'react';
-import { Download, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download, Search, FileCode2 } from 'lucide-react';
+import axios from 'axios';
 import styles from './Historial.module.css';
 
-const mockData = [
-    { clave: '50601022600310112345600100001010000000001199999999', tipo: 'FE-01', receptor: 'Tech Solutions SA', monto: '56,500.00', estado: 'ACEPTADO', fecha: '2026-02-26 14:32' },
-    { clave: '50601022600310112345600100001010000000002199999999', tipo: 'FE-01', receptor: 'Cafe del Valle SRL', monto: '12,300.00', estado: 'ENVIADO', fecha: '2026-02-26 15:01' },
-    { clave: '50601022600310112345600100001030000000001199999999', tipo: 'NC-03', receptor: 'Distribuidora CR', monto: '8,450.00', estado: 'RECHAZADO', fecha: '2026-02-25 09:45' },
-    { clave: '50601022600310112345600100001010000000003199999999', tipo: 'FE-01', receptor: 'Importadora Global', monto: '245,000.00', estado: 'ACEPTADO', fecha: '2026-02-25 11:20' },
-    { clave: '50601022600310112345600100001040000000001199999999', tipo: 'TE-04', receptor: 'Cliente Final', monto: '5,650.00', estado: 'ACEPTADO', fecha: '2026-02-24 17:15' },
-];
+interface FacturaRecord {
+    id: string;
+    claveNumerica: string | null;
+    tipoDocumento: string;
+    fechaEmision: string;
+    montoTotal: string;
+    estadoInterno: string;
+}
 
 export default function Historial() {
+    const [facturas, setFacturas] = useState<FacturaRecord[]>([]);
+    const [loading, setLoading] = useState(true);
     const [filtroEstado, setFiltroEstado] = useState('TODOS');
     const [busqueda, setBusqueda] = useState('');
+    const emisorIdMock = "tu-emisor-id"; // TODO: Obtain from AuthContext
 
-    const filtrados = mockData.filter((d) => {
-        if (filtroEstado !== 'TODOS' && d.estado !== filtroEstado) return false;
-        if (busqueda && !d.receptor.toLowerCase().includes(busqueda.toLowerCase()) && !d.clave.includes(busqueda)) return false;
+    useEffect(() => {
+        const fetchFacturas = async () => {
+            try {
+                setLoading(true);
+                const res = await axios.get(`http://localhost:3000/api/facturas?emisorId=${emisorIdMock}`);
+                setFacturas(res.data);
+            } catch (error) {
+                console.error("Error fetching facturas", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFacturas();
+    }, []);
+
+    const filtrados = facturas.filter((d) => {
+        if (filtroEstado !== 'TODOS' && d.estadoInterno !== filtroEstado) return false;
+
+        // Since we don't have 'receptor' name in DocumentoElectronico DB directly yet, we search only by clave numeric
+        if (busqueda && (!d.claveNumerica || !d.claveNumerica.includes(busqueda))) return false;
         return true;
     });
+
+    const handleDownloadPDF = (clave: string | null) => {
+        if (!clave) return alert("Clave no disponible");
+        window.open(`http://localhost:3000/api/facturas/${clave}/pdf`, '_blank');
+    };
+
+    const handleDownloadXML = (clave: string | null) => {
+        if (!clave) return alert("Clave no disponible");
+        window.open(`http://localhost:3000/api/facturas/${clave}/xml`, '_blank');
+    };
 
     const badgeClass = (estado: string) => {
         switch (estado) {
@@ -64,18 +97,43 @@ export default function Historial() {
                         </tr>
                     </thead>
                     <tbody>
-                        {filtrados.map((row) => (
-                            <tr key={row.clave}>
-                                <td className={styles.claveText}>{row.clave.substring(0, 20)}...</td>
-                                <td>{row.tipo}</td>
-                                <td>{row.receptor}</td>
-                                <td>CRC {row.monto}</td>
-                                <td><span className={`${styles.badge} ${badgeClass(row.estado)}`}>{row.estado}</span></td>
-                                <td>{row.fecha}</td>
+                        {loading && (
+                            <tr>
+                                <td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>Cargando documentos...</td>
+                            </tr>
+                        )}
+                        {!loading && filtrados.length === 0 && (
+                            <tr>
+                                <td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>No se encontraron documentos</td>
+                            </tr>
+                        )}
+                        {!loading && filtrados.map((row) => (
+                            <tr key={row.id}>
+                                <td className={styles.claveText}>{row.claveNumerica ? `${row.claveNumerica.substring(0, 20)}...` : 'Pendiente...'}</td>
+                                <td>{row.tipoDocumento === '01' ? 'FE-01' : row.tipoDocumento === '04' ? 'TE-04' : row.tipoDocumento === '03' ? 'NC-03' : row.tipoDocumento === '02' ? 'ND-02' : 'OTRO'}</td>
+                                <td>-- Cliente --</td>
+                                <td>CRC {parseFloat(row.montoTotal).toLocaleString('es-CR')}</td>
+                                <td><span className={`${styles.badge} ${badgeClass(row.estadoInterno)}`}>{row.estadoInterno}</span></td>
+                                <td>{new Date(row.fechaEmision).toLocaleString('es-CR')}</td>
                                 <td>
-                                    <button className={styles.actionBtn}>
-                                        <Download size={12} /> PDF
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button
+                                            className={styles.actionBtn}
+                                            title="Descargar PDF"
+                                            onClick={() => handleDownloadPDF(row.claveNumerica)}
+                                            disabled={!row.claveNumerica}
+                                        >
+                                            <Download size={14} />
+                                        </button>
+                                        <button
+                                            className={styles.actionBtn}
+                                            title="Descargar XML Firmado"
+                                            onClick={() => handleDownloadXML(row.claveNumerica)}
+                                            disabled={!row.claveNumerica}
+                                        >
+                                            <FileCode2 size={14} />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}

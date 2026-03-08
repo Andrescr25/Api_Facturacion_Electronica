@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { CreacionFacturaRequest } from '../models/FacturaTypes';
 import { HaciendaXmlGenerator } from '../utils/HaciendaXmlGenerator';
 import { HaciendaSigner } from '../utils/HaciendaSigner';
@@ -7,8 +6,7 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 import { PdfGeneratorService } from '../utils/PdfGeneratorService';
-
-const prisma = new PrismaClient();
+import prisma from '../utils/prismaClient';
 
 export class FacturacionService {
 
@@ -16,7 +14,7 @@ export class FacturacionService {
      * Procesa la solicitud completa de un FrontEnd o POS para emitir una factura electrónica.
      * Guarda temporalmente en BD para respaldo e intenta enviar a Hacienda.
      */
-    static async emitirFacturaElectronica(emisorId: string, request: CreacionFacturaRequest) {
+    static async emitirFacturaElectronica(emisorId: string, request: CreacionFacturaRequest, tipoDocumento: '01' | '02' | '03' | '04' = '01') {
         try {
             // 1. Validar al emisor en base de datos
             const emisor = await prisma.emisorCredenciales.findUnique({
@@ -36,14 +34,14 @@ export class FacturacionService {
             const consecutivoReal = emisorActualizado.consecutivoFe;
 
             // 3. Generar Clave y XML crudo (Sin firmar)
-            const { clave, consecutivo, xml } = HaciendaXmlGenerator.generarComprobanteXML(request, emisor, consecutivoReal, '01');
+            const { clave, consecutivo, xml } = HaciendaXmlGenerator.generarComprobanteXML(request, emisor, consecutivoReal, tipoDocumento);
 
             const documentoBD = await prisma.documentoElectronico.create({
                 data: {
                     emisorId: emisor.id,
                     claveNumerica: clave,
                     numeroConsecutivo: consecutivo,
-                    tipoDocumento: '01',
+                    tipoDocumento: tipoDocumento,
                     montoTotal: request.resumenFactura.totalComprobante,
                     estadoInterno: 'CREADO',
                     xmlAlmacen: {
@@ -60,7 +58,7 @@ export class FacturacionService {
 
             // 4.5 Generar PDF y almacenarlo localmente (Carpeta temporal o estática)
             try {
-                const pdfBuffer = await PdfGeneratorService.generarFacturaPDF(request, emisor, clave, consecutivo, '01');
+                const pdfBuffer = await PdfGeneratorService.generarFacturaPDF(request, emisor, clave, consecutivo, tipoDocumento);
                 const pdfDir = path.join(__dirname, '../../public/pdfs');
                 if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
 

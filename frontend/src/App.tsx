@@ -7,21 +7,27 @@ import Historial from './pages/Historial/Historial';
 import Configuracion from './pages/Configuracion/Configuracion';
 import ApiKeys from './pages/ApiKeys/ApiKeys';
 import Login from './pages/Login/Login';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/docs" element={<ApiDocs />} />
-          <Route path="/playground" element={<Playground />} />
-          <Route path="/historial" element={<Historial />} />
-          <Route path="/configuracion" element={<Configuracion />} />
-          <Route path="/api-keys" element={<ApiKeys />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Layout />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/docs" element={<ApiDocs />} />
+              <Route path="/playground" element={<Playground />} />
+              <Route path="/historial" element={<Historial />} />
+              <Route path="/configuracion" element={<Configuracion />} />
+              <Route path="/api-keys" element={<ApiKeys />} />
+            </Route>
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

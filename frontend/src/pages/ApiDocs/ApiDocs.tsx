@@ -74,6 +74,99 @@ const endpoints: Endpoint[] = [
 }`,
     },
     {
+        method: 'POST',
+        path: '/api/facturas/tiquete/emitir',
+        description: 'Emitir un Tiquete Electronico (Tipo 04) para consumidores finales',
+        params: [
+            { name: 'emisorId', type: 'string (UUID)', required: true, description: 'ID del emisor registrado en el sistema' },
+        ],
+        requestBody: `// Mismo formato base que Factura Electrónica,
+// pero el objeto "receptor" es opcional.
+{
+  "emisorId": "uuid-del-emisor",
+  "factura": {
+    "condicionVenta": "01",
+    "medioPago": ["01"],
+    "sucursal": 1,
+    "caja": 1,
+    "lineasDetalle": [
+      {
+        "codigoCabys": "4321500000100",
+        "cantidad": 1,
+        "unidadMedida": "Unid",
+        "detalle": "Consumo en Restaurante",
+        "precioUnitario": 10000.00,
+        "montoTotal": 10000.00,
+        "subTotal": 10000.00,
+        "impuestos": [{"codigo": "01", "codigoTarifa": "08", "tarifa": 13.00, "monto": 1300.00}],
+        "impuestoNeto": 1300.00,
+        "montoTotalLinea": 11300.00
+      }
+    ],
+    "resumenFactura": {
+      "codigoMoneda": "CRC",
+      "totalGravado": 10000.00,
+      "totalExento": 0,
+      "totalVentaNeta": 10000.00,
+      "totalImpuesto": 1300.00,
+      "totalComprobante": 11300.00
+    }
+  }
+}`,
+        responseBody: `{
+  "message": "Comprobante electrónico procesado exitosamente",
+  ...
+}`
+    },
+    {
+        method: 'POST',
+        path: '/api/facturas/nota-credito/emitir',
+        description: 'Emitir una Nota de Credito Electronica (Tipo 03) para anular o corregir facturas',
+        params: [
+            { name: 'emisorId', type: 'string (UUID)', required: true, description: 'ID del emisor' },
+        ],
+        requestBody: `// Mismo formato que la Factura, pero REQUIERE el array "referencias"
+{
+  "emisorId": "uuid-del-emisor",
+  "factura": {
+    ... // Receptor, lineas, etc (Ver Factura)
+    "referencias": [
+      {
+        "tipoDocumento": "01", // 01 hace referencia a una Factura
+        "numeroDocumento": "50601022600310112345600100001010000000001199999999", // Clave original
+        "fechaEmision": "2026-02-26T10:00:00Z",
+        "codigo": "01", // 01: Anula Documento de Referencia
+        "razon": "Anulacion por devolucion de mercaderia"
+      }
+    ]
+  }
+}`,
+    },
+    {
+        method: 'POST',
+        path: '/api/facturas/nota-debito/emitir',
+        description: 'Emitir una Nota de Debito Electronica (Tipo 02) para cobrar montos adicionales',
+        params: [
+            { name: 'emisorId', type: 'string (UUID)', required: true, description: 'ID del emisor' },
+        ],
+        requestBody: `// Requiere el array "referencias" apuntando a la Factura/Tiquete original
+{
+  "emisorId": "uuid-del-emisor",
+  "factura": {
+    ... // Receptor, lineas, etc
+    "referencias": [
+      {
+        "tipoDocumento": "01", 
+        "numeroDocumento": "50601022600310112345600100001010000000001199999999",
+        "fechaEmision": "2026-02-26T10:00:00Z",
+        "codigo": "02", // 02: Corrige monto, 04: Referencia a otro documento
+        "razon": "Cobro adicional por flete no incluido"
+      }
+    ]
+  }
+}`,
+    },
+    {
         method: 'GET',
         path: '/api/facturas/:clave/pdf',
         description: 'Descargar el PDF de un comprobante emitido',

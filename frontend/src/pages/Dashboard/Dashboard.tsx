@@ -1,13 +1,33 @@
 import { FileText, CheckCircle, XCircle, Clock, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import styles from './Dashboard.module.css';
 
-const mockRecent = [
-    { clave: '50601022600012345678', tipo: 'FE-01', receptor: 'Tech Solutions SA', estado: 'ACEPTADO', fecha: '2026-02-26' },
-    { clave: '50601022600012345679', tipo: 'FE-01', receptor: 'Cafe del Valle SRL', estado: 'ENVIADO', fecha: '2026-02-26' },
-    { clave: '50601022600012345680', tipo: 'NC-03', receptor: 'Distribuidora CR', estado: 'RECHAZADO', fecha: '2026-02-25' },
-];
-
 export default function Dashboard() {
+    const [stats, setStats] = useState({
+        facturasEmitidas: 0,
+        aceptadas: 0,
+        rechazadas: 0,
+        pendientes: 0
+    });
+    const [recent, setRecent] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        Promise.all([
+            fetch('http://localhost:3000/api/dashboard/stats').then(res => res.json()),
+            fetch('http://localhost:3000/api/dashboard/recent').then(res => res.json())
+        ])
+            .then(([statsData, recentData]) => {
+                setStats(statsData);
+                setRecent(Array.isArray(recentData) ? recentData : []);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("Error fetching dashboard data:", err);
+                setLoading(false);
+            });
+    }, []);
+
     return (
         <div className={styles.dashboard}>
             <div className={styles.statsGrid}>
@@ -18,7 +38,9 @@ export default function Dashboard() {
                             <FileText size={18} />
                         </div>
                     </div>
-                    <span className={styles.statValue}>1,247</span>
+                    <span className={styles.statValue}>
+                        {loading ? '...' : stats.facturasEmitidas.toLocaleString()}
+                    </span>
                 </div>
 
                 <div className={styles.statCard}>
@@ -28,7 +50,9 @@ export default function Dashboard() {
                             <CheckCircle size={18} />
                         </div>
                     </div>
-                    <span className={styles.statValue}>1,198</span>
+                    <span className={styles.statValue}>
+                        {loading ? '...' : stats.aceptadas.toLocaleString()}
+                    </span>
                 </div>
 
                 <div className={styles.statCard}>
@@ -38,7 +62,9 @@ export default function Dashboard() {
                             <XCircle size={18} />
                         </div>
                     </div>
-                    <span className={styles.statValue}>12</span>
+                    <span className={styles.statValue}>
+                        {loading ? '...' : stats.rechazadas.toLocaleString()}
+                    </span>
                 </div>
 
                 <div className={styles.statCard}>
@@ -48,7 +74,9 @@ export default function Dashboard() {
                             <Clock size={18} />
                         </div>
                     </div>
-                    <span className={styles.statValue}>37</span>
+                    <span className={styles.statValue}>
+                        {loading ? '...' : stats.pendientes.toLocaleString()}
+                    </span>
                 </div>
             </div>
 
@@ -61,7 +89,7 @@ export default function Dashboard() {
                 <div className={styles.quickStart}>
                     <span className={styles.codeLabel}>Emitir tu primera factura</span>
                     <div className={styles.codeBlock}>
-                        <pre>{`curl -X POST https://api.facturacr.com/api/facturas/emitir \\
+                        <pre>{`curl -X POST http://localhost:3000/api/facturas/emitir \\
   -H "Authorization: Bearer TU_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -124,15 +152,15 @@ export default function Dashboard() {
                         </tr>
                     </thead>
                     <tbody>
-                        {mockRecent.map((row) => (
+                        {recent.map((row) => (
                             <tr key={row.clave}>
                                 <td className={styles.claveText}>{row.clave}</td>
                                 <td>{row.tipo}</td>
                                 <td>{row.receptor}</td>
                                 <td>
                                     <span className={`${styles.badge} ${row.estado === 'ACEPTADO' ? styles.badgeSuccess :
-                                            row.estado === 'RECHAZADO' ? styles.badgeDanger :
-                                                styles.badgeWarning
+                                        row.estado === 'RECHAZADO' ? styles.badgeDanger :
+                                            styles.badgeWarning
                                         }`}>
                                         {row.estado}
                                     </span>

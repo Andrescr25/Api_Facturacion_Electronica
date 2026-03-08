@@ -28,7 +28,12 @@ model EmisorCredenciales {
   consecutivoCpce Int      @default(1)
   consecutivoRce  Int      @default(1)
   
+  // Limites de uso
+  usoMensualApi   Int      @default(0)
+  mesUsoActual    String?  @db.VarChar(7) // Formato "YYYY-MM"
+
   documentos      DocumentoElectronico[]
+  apiKeys         ApiKey[]
 }
 
 model DocumentoElectronico {
@@ -72,4 +77,15 @@ enum EstadoDocumento {
   ENVIADO
   ACEPTADO
   RECHAZADO
+}
+
+model ApiKey {
+  id              String   @id @default(uuid())
+  emisorId        String
+  emisor          EmisorCredenciales @relation(fields: [emisorId], references: [id], onDelete: Cascade)
+  nombre          String
+  key             String   @unique
+  activa          Boolean  @default(true)
+  fechaCreacion   DateTime @default(now())
+  ultimoUso       DateTime?
 }

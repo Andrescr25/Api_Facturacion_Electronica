@@ -2,11 +2,9 @@ import cron from 'node-cron';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
-import { PrismaClient } from '@prisma/client';
 import { HaciendaAuthService } from './HaciendaAuthService';
 import { EmailNotificationService } from './EmailNotificationService';
-
-const prisma = new PrismaClient();
+import prisma from './prismaClient';
 
 /**
  * Poller Background de Hacienda CR
