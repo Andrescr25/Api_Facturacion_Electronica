@@ -1,0 +1,179 @@
+.docs {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.intro {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    max-width: 700px;
+    line-height: 1.7;
+}
+
+.baseUrl {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--space-md) var(--space-lg);
+}
+
+.baseUrlLabel {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.baseUrlValue {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--color-primary-light);
+    background: var(--bg-body);
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+}
+
+.endpointCard {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.endpointHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.endpointHeader:hover {
+    background: var(--bg-surface-hover);
+}
+
+.methodBadge {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    min-width: 50px;
+    text-align: center;
+}
+
+.methodPost {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.methodGet {
+    background: var(--color-info-bg);
+    color: var(--color-info);
+}
+
+.methodDelete {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+.endpointPath {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.endpointDesc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+
+.endpointBody {
+    padding: var(--space-lg);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.fieldTitle {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.codeBlock {
+    background: var(--bg-body);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    overflow-x: auto;
+}
+
+.codeBlock pre {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin: 0;
+    white-space: pre;
+}
+
+.paramTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.paramTable th,
+.paramTable td {
+    padding: 8px var(--space-md);
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.85rem;
+}
+
+.paramTable th {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+}
+
+.paramName {
+    font-family: var(--font-mono);
+    color: var(--color-primary-light);
+    font-size: 0.85rem;
+}
+
+.paramType {
+    font-family: var(--font-mono);
+    color: var(--color-warning);
+    font-size: 0.8rem;
+}
+
+.required {
+    color: var(--color-danger);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.chevron {
+    color: var(--text-muted);
+    transition: transform var(--transition-fast);
+    margin-left: var(--space-sm);
+}
+
+.chevronOpen {
+    transform: rotate(90deg);
+}
