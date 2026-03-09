@@ -5,6 +5,7 @@ import facturacionRoutes from './routes/facturacion.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import apikeyRoutes from './routes/apikey.routes';
 import catalogoRoutes from './routes/catalogo.routes';
+import configuracionRoutes from './routes/configuracion.routes';
 
 const app: Application = express();
 
@@ -21,6 +22,7 @@ app.use('/api/facturas', facturacionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/keys', apikeyRoutes);
 app.use('/api/catalogos', catalogoRoutes);
+app.use('/api/configuracion', configuracionRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
     res.status(200).json({ status: 'OK', message: 'API Facturacion Electronica CR is running' });
