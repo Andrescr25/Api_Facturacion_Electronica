@@ -371,7 +371,7 @@ export default function Playground() {
                                     <div className={styles.dictSection}>
                                         <h4>Unidades de Medida</h4>
                                         <div className={styles.chipList}>
-                                            {Object.entries(catalogos.unidadesMedida).map(([key, val]) => (
+                                            {Object.entries(catalogos.UnidadesMedida).map(([key, val]) => (
                                                 <div key={key} className={styles.dictChip} title={val as string}>
                                                     <span className={styles.chipKey}>{key}</span>
                                                     <span className={styles.chipVal}>{val as string}</span>
@@ -382,7 +382,7 @@ export default function Playground() {
                                     <div className={styles.dictSection}>
                                         <h4>Tipos de Identificación</h4>
                                         <div className={styles.chipList}>
-                                            {Object.entries(catalogos.tiposIdentificacion).map(([key, val]) => (
+                                            {Object.entries(catalogos.TiposIdentificacion).map(([key, val]) => (
                                                 <div key={key} className={styles.dictChip}>
                                                     <span className={styles.chipKey}>{key}</span>
                                                     <span className={styles.chipVal}>{val as string}</span>
@@ -393,7 +393,7 @@ export default function Playground() {
                                     <div className={styles.dictSection}>
                                         <h4>Medios de Pago</h4>
                                         <div className={styles.chipList}>
-                                            {Object.entries(catalogos.mediosPago).map(([key, val]) => (
+                                            {Object.entries(catalogos.MediosPago).map(([key, val]) => (
                                                 <div key={key} className={styles.dictChip}>
                                                     <span className={styles.chipKey}>{key}</span>
                                                     <span className={styles.chipVal}>{val as string}</span>
@@ -404,7 +404,7 @@ export default function Playground() {
                                     <div className={styles.dictSection}>
                                         <h4>Condiciones de Venta</h4>
                                         <div className={styles.chipList}>
-                                            {Object.entries(catalogos.condicionesVenta).map(([key, val]) => (
+                                            {Object.entries(catalogos.CondicionesVenta).map(([key, val]) => (
                                                 <div key={key} className={styles.dictChip}>
                                                     <span className={styles.chipKey}>{key}</span>
                                                     <span className={styles.chipVal}>{val as string}</span>
@@ -415,7 +415,7 @@ export default function Playground() {
                                     <div className={styles.dictSection}>
                                         <h4>Tipos de Impuesto (Tarifas IVA)</h4>
                                         <div className={styles.chipList}>
-                                            {Object.entries(catalogos.tarifasIva).map(([key, val]) => (
+                                            {Object.entries(catalogos.TarifasIVA).map(([key, val]) => (
                                                 <div key={key} className={styles.dictChip}>
                                                     <span className={styles.chipKey}>{key}</span>
                                                     <span className={styles.chipVal}>{(val as any).descripcion}</span>
@@ -429,7 +429,7 @@ export default function Playground() {
                                     <div className={styles.dictSection}>
                                         <h4>Códigos de Referencia (Para NC/ND)</h4>
                                         <div className={styles.chipList}>
-                                            {Object.entries(catalogos.codigosReferenciaNc).map(([key, val]) => (
+                                            {Object.entries(catalogos.MotivosReferenciaNC).map(([key, val]) => (
                                                 <div key={key} className={styles.dictChip}>
                                                     <span className={styles.chipKey}>{key}</span>
                                                     <span className={styles.chipVal}>{val as string}</span>
