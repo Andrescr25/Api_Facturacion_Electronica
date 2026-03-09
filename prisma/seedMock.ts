@@ -12,11 +12,11 @@ async function main() {
         emisor = await prisma.emisorCredenciales.create({
             data: {
                 id: defaultEmisorId,
-                identificacion: "3101123456",
-                nombre: "Usuario de Pruebas Playground",
-                usuarioAtv: "cpj-3101123456@stag.comprobanteselectronicos.go.cr",
-                passwordAtv: "Password123!",
-                pinCertificado: "1234"
+                identificacion: "",
+                nombre: "",
+                usuarioAtv: "",
+                passwordAtv: "",
+                pinCertificado: ""
             }
         });
         console.log("Emisor creado exitosamente.");
