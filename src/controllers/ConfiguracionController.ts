@@ -21,6 +21,7 @@ export class ConfiguracionController {
             }
 
             return res.json({
+                id: emisor.id,
                 nombre: emisor.nombre,
                 identificacion: emisor.identificacion,
                 usuarioAtv: emisor.usuarioAtv,

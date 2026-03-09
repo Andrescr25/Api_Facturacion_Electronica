@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Send, Terminal } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Send, Terminal, BookOpen } from 'lucide-react';
 import axios from 'axios';
 import styles from './Playground.module.css';
 
@@ -163,13 +163,44 @@ export default function Playground() {
     const [authKey, setAuthKey] = useState('');
     const [response, setResponse] = useState<ResponseData | null>(null);
     const [loading, setLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState<'response' | 'dictionary'>('response');
+    const [catalogos, setCatalogos] = useState<any>(null);
+    const [emisorConfig, setEmisorConfig] = useState<any>(null);
+
+    // Fetch catalogos and configuracion on mount
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [resCat, resConf] = await Promise.all([
+                    axios.get('http://localhost:3000/api/catalogos'),
+                    axios.get('http://localhost:3000/api/configuracion')
+                ]);
+                setCatalogos(resCat.data);
+                setEmisorConfig(resConf.data);
+
+                // Inject real emisorId into default body
+                if (resConf.data?.id) {
+                    setBody(prev => prev.replace('tu-emisor-id', resConf.data.id));
+                }
+            } catch (err) {
+                console.error("Error fetching playground initial data:", err);
+            }
+        };
+        fetchData();
+    }, []);
 
     const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const idx = parseInt(e.target.value);
         if (isNaN(idx)) return;
         setMethod(presets[idx].method);
         setUrl(presets[idx].url);
-        setBody(presets[idx].body);
+
+        // Dynamically inject emisorId if we have it
+        let newBody = presets[idx].body;
+        if (emisorConfig?.id) {
+            newBody = newBody.replace('tu-emisor-id', emisorConfig.id);
+        }
+        setBody(newBody);
         setResponse(null); // Clear previous response when changing templates
     };
 
@@ -215,6 +246,7 @@ export default function Playground() {
                 body: err.response?.data ? JSON.stringify(err.response.data, null, 2) : err.message,
                 time: Date.now() - start,
             });
+            setActiveTab('response'); // Auto-switch to response tab on send
         } finally {
             setLoading(false);
         }
@@ -233,7 +265,14 @@ export default function Playground() {
             {/* Request Panel */}
             <div className={styles.panel}>
                 <div className={styles.panelHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className={styles.panelTitle}>Request</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span className={styles.panelTitle}>Request</span>
+                        {emisorConfig && emisorConfig.nombre && (
+                            <span style={{ fontSize: '0.75rem', background: 'var(--color-primary-bg)', color: 'var(--color-primary)', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                                Emisor: {emisorConfig.nombre} ({emisorConfig.identificacion})
+                            </span>
+                        )}
+                    </div>
                     <select
                         onChange={handlePresetChange}
                         style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
@@ -284,28 +323,124 @@ export default function Playground() {
                 </div>
             </div>
 
-            {/* Response Panel */}
+            {/* Right Panel (Tabs: Response / Dictionary) */}
             <div className={styles.panel}>
-                <div className={styles.panelHeader}>
-                    <span className={styles.panelTitle}>Response</span>
+                <div className={styles.panelHeader} style={{ gap: '15px', justifyContent: 'flex-start' }}>
+                    <button
+                        className={`${styles.tabBtn} ${activeTab === 'response' ? styles.tabBtnActive : ''}`}
+                        onClick={() => setActiveTab('response')}
+                    >
+                        <Terminal size={14} /> Respuesta API
+                    </button>
+                    <button
+                        className={`${styles.tabBtn} ${activeTab === 'dictionary' ? styles.tabBtnActive : ''}`}
+                        onClick={() => setActiveTab('dictionary')}
+                    >
+                        <BookOpen size={14} /> Diccionario Hacienda
+                    </button>
                 </div>
+
                 <div className={styles.panelBody}>
-                    {response ? (
-                        <>
-                            <div className={styles.responseMeta}>
-                                <span className={`${styles.statusCode} ${statusClass}`}>
-                                    {response.status}
-                                </span>
-                                <span className={styles.responseTime}>{response.time}ms</span>
+                    {activeTab === 'response' ? (
+                        response ? (
+                            <>
+                                <div className={styles.responseMeta}>
+                                    <span className={`${styles.statusCode} ${statusClass}`}>
+                                        {response.status}
+                                    </span>
+                                    <span className={styles.responseTime}>{response.time}ms</span>
+                                </div>
+                                <div className={styles.responseBlock}>
+                                    <pre>{response.body}</pre>
+                                </div>
+                            </>
+                        ) : (
+                            <div className={styles.emptyState}>
+                                <Terminal size={40} />
+                                <span>Envia una solicitud para ver la respuesta</span>
                             </div>
-                            <div className={styles.responseBlock}>
-                                <pre>{response.body}</pre>
-                            </div>
-                        </>
+                        )
                     ) : (
-                        <div className={styles.emptyState}>
-                            <Terminal size={40} />
-                            <span>Envia una solicitud para ver la respuesta</span>
+                        <div className={styles.dictionaryContainer}>
+                            <p className={styles.dictionaryIntro}>
+                                Utiliza estos códigos oficiales emitidos por Hacienda para estructurar tu documento JSON.
+                            </p>
+
+                            {catalogos ? (
+                                <div className={styles.dictionaryGrid}>
+                                    <div className={styles.dictSection}>
+                                        <h4>Unidades de Medida</h4>
+                                        <div className={styles.chipList}>
+                                            {Object.entries(catalogos.unidadesMedida).map(([key, val]) => (
+                                                <div key={key} className={styles.dictChip} title={val as string}>
+                                                    <span className={styles.chipKey}>{key}</span>
+                                                    <span className={styles.chipVal}>{val as string}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className={styles.dictSection}>
+                                        <h4>Tipos de Identificación</h4>
+                                        <div className={styles.chipList}>
+                                            {Object.entries(catalogos.tiposIdentificacion).map(([key, val]) => (
+                                                <div key={key} className={styles.dictChip}>
+                                                    <span className={styles.chipKey}>{key}</span>
+                                                    <span className={styles.chipVal}>{val as string}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className={styles.dictSection}>
+                                        <h4>Medios de Pago</h4>
+                                        <div className={styles.chipList}>
+                                            {Object.entries(catalogos.mediosPago).map(([key, val]) => (
+                                                <div key={key} className={styles.dictChip}>
+                                                    <span className={styles.chipKey}>{key}</span>
+                                                    <span className={styles.chipVal}>{val as string}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className={styles.dictSection}>
+                                        <h4>Condiciones de Venta</h4>
+                                        <div className={styles.chipList}>
+                                            {Object.entries(catalogos.condicionesVenta).map(([key, val]) => (
+                                                <div key={key} className={styles.dictChip}>
+                                                    <span className={styles.chipKey}>{key}</span>
+                                                    <span className={styles.chipVal}>{val as string}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className={styles.dictSection}>
+                                        <h4>Tipos de Impuesto (Tarifas IVA)</h4>
+                                        <div className={styles.chipList}>
+                                            {Object.entries(catalogos.tarifasIva).map(([key, val]) => (
+                                                <div key={key} className={styles.dictChip}>
+                                                    <span className={styles.chipKey}>{key}</span>
+                                                    <span className={styles.chipVal}>{(val as any).descripcion}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '5px' }}>
+                                            * Usar la llave con el "codigoTarifa" 01, 02, etc. en el JSON.
+                                        </p>
+                                    </div>
+                                    <div className={styles.dictSection}>
+                                        <h4>Códigos de Referencia (Para NC/ND)</h4>
+                                        <div className={styles.chipList}>
+                                            {Object.entries(catalogos.codigosReferenciaNc).map(([key, val]) => (
+                                                <div key={key} className={styles.dictChip}>
+                                                    <span className={styles.chipKey}>{key}</span>
+                                                    <span className={styles.chipVal}>{val as string}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className={styles.emptyState}>Cargando diccionarios...</div>
+                            )}
                         </div>
                     )}
                 </div>
