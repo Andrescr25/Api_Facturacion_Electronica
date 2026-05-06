@@ -10,6 +10,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // url se configura en prisma.config.ts (Prisma v7+)
 }
 
 model EmisorCredenciales {
@@ -28,6 +29,9 @@ model EmisorCredenciales {
   consecutivoCpce Int      @default(1)
   consecutivoRce  Int      @default(1)
   
+  // Código de actividad económica (6 dígitos, requerido por Hacienda en el XML)
+  codigoActividad String   @default("") @db.VarChar(6)
+
   // Limites de uso
   usoMensualApi   Int      @default(0)
   mesUsoActual    String?  @db.VarChar(7) // Formato "YYYY-MM"

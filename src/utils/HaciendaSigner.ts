@@ -1,6 +1,7 @@
 import * as forge from 'node-forge';
 import crypto from 'crypto';
 import { SignedXml } from 'xml-crypto';
+import { decrypt } from './encryptionService';
 
 /**
  * Módulo Avanzado de Firma Digital XAdES-EPES para Hacienda CR.
@@ -51,11 +52,14 @@ export class HaciendaSigner {
     static async firmarXML(
         xmlSinFimar: string,
         p12Data: Uint8Array | Buffer,
-        p12Password: string
+        p12PasswordCifrado: string
     ): Promise<string> {
         const p12Buffer = Buffer.isBuffer(p12Data) ? p12Data : Buffer.from(p12Data);
 
-        // 1. Extraer LLaves
+        // 1. Descifrar PIN (soporta texto plano legacy para compatibilidad)
+        const p12Password = decrypt(p12PasswordCifrado);
+
+        // 2. Extraer LLaves
         const { privateKeyPem, certBase64 } = this.extractKeysFromP12(p12Buffer, p12Password);
 
         // Formatear PEM del cert para el inyector de xml-crypto

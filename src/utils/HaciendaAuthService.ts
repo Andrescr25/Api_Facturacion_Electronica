@@ -1,5 +1,6 @@
 import axios from 'axios';
 import qs from 'qs';
+import { decrypt } from './encryptionService';
 
 interface TokenResponse {
     access_token: string;
@@ -14,29 +15,36 @@ export class HaciendaAuthService {
     /**
      * Caché simple en memoria para evitar saturar el IDP de Hacienda.
      * key: username -> { token, expiresAt }
+     *
+     * Nota: En un entorno multi-instancia, cada pod tendrá su propio caché.
+     * El token ATV tiene un TTL de ~300s; el margen de 60s asegura renovación
+     * antes de que expire. Para escalar horizontalmente, migrar a Redis/Upstash.
      */
     private static tokenCache: Map<string, { token: string; expiresAt: number }> = new Map();
 
     /**
      * Obtiene un Token JWT del Identity Provider de ATV (Hacienda).
-     * Si ya existe un token en caché y es válido (le faltan más de 30s para expirar), retorna ese.
+     * Descifra la contraseña si viene cifrada (AES-256-GCM).
+     * Si ya existe un token en caché y es válido (le faltan más de 60s para expirar), retorna ese.
      */
     static async obtenerToken(
         usuarioAtv: string,
-        passwordAtv: string
+        passwordAtvCifrado: string
     ): Promise<string> {
 
         // 1. Revisar Caché
         const cacheado = this.tokenCache.get(usuarioAtv);
         if (cacheado) {
             const ahora = Date.now();
-            // Si faltan más de 30 segundos para expirar, lo reusamos
-            if (cacheado.expiresAt - ahora > 30000) {
+            if (cacheado.expiresAt - ahora > 60000) { // 60s de margen
                 return cacheado.token;
             }
         }
 
-        // 2. Si no hay token o expiró, solicitar uno nuevo
+        // 2. Descifrar password (soporta texto plano legacy para compatibilidad)
+        const passwordAtv = decrypt(passwordAtvCifrado);
+
+        // 3. Si no hay token o expiró, solicitar uno nuevo
         const idpUrl = process.env.HACIENDA_IDP_URL;
         const clientId = process.env.HACIENDA_IDP_CLIENT_ID || 'api-stag';
 

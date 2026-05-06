@@ -45,7 +45,7 @@ export class HaciendaXmlGenerator {
             });
 
         doc.ele('Clave').txt(clave).up()
-            .ele('CodigoActividad').txt('123456').up()
+            .ele('CodigoActividad').txt(emisor.codigoActividad || '').up()
             .ele('NumeroConsecutivo').txt(consecutivo).up()
             .ele('FechaEmision').txt(fechaHora).up();
 

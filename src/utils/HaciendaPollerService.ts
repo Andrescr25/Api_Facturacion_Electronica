@@ -16,9 +16,9 @@ export class HaciendaPollerService {
      * Inicia el trabajador Cronológico. Ejecuta la validación cada 2 minutos.
      */
     static start() {
-        console.log('✅ Poller de Hacienda Inicializado (Cron: */2 * * * *)');
+        console.log('✅ Poller de Hacienda Inicializado (Cron: */5 * * * *)');
 
-        cron.schedule('*/2 * * * *', async () => {
+        cron.schedule('*/5 * * * *', async () => {
             console.log('⏳ Ejecutando revisión periódica de Comprobantes Pendientes...');
             await this.revisarPendientes();
         });
@@ -26,19 +26,21 @@ export class HaciendaPollerService {
 
     private static async revisarPendientes() {
         try {
-            // 1. Obtener documentos que están en estado 'ENVIADO'
-            // Filtrar opcionalmente por intentos máximos o tiempo de gracia
+            // [FUNC-04] Procesar máximo 10 documentos por ciclo para no bloquear el event loop
+            const BATCH_SIZE = 10;
             const pendientes = await prisma.documentoElectronico.findMany({
                 where: {
                     estadoInterno: 'ENVIADO',
                     intentosEnvio: { lt: 5 }
                 },
-                include: { emisor: true, xmlAlmacen: true, logs: true }
+                include: { emisor: true, xmlAlmacen: true, logs: true },
+                take: BATCH_SIZE,
+                orderBy: { fechaEmision: 'asc' } // Procesar los más antiguos primero
             });
 
             if (pendientes.length === 0) return;
 
-            console.log(`🔍 Se encontraron ${pendientes.length} documentos pendientes de resolución.`);
+            console.log(`🔍 Procesando ${pendientes.length} de los documentos pendientes (batch de ${BATCH_SIZE}).`);
 
             // 2. Iterar sobre pendientes (En Producción alto volumen, se usan colas Batch)
             for (const doc of pendientes) {
@@ -135,9 +137,17 @@ export class HaciendaPollerService {
                     // Fallo al consultar (Ej. 404 por clave no encontrada aún)
                     console.error(`❌ Error consultando comprobante ${doc.claveNumerica}:`, error.message);
 
+                    const nuevoIntentos = doc.intentosEnvio + 1;
+                    const statusUpdates: any = { intentosEnvio: { increment: 1 } };
+                    
+                    // Si ya superó el máximo de intentos, marcar como RECHAZADO
+                    if (nuevoIntentos >= 5) {
+                        statusUpdates.estadoInterno = 'RECHAZADO';
+                    }
+
                     await prisma.documentoElectronico.update({
                         where: { id: doc.id },
-                        data: { intentosEnvio: { increment: 1 } }
+                        data: statusUpdates
                     });
 
                     await prisma.logsTransaccion.create({

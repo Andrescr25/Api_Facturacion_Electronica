@@ -1,17 +1,45 @@
 import admin from 'firebase-admin';
 
-// Verifica si VITE_FIREBASE_PROJECT_ID u otra forma de inicialización existe
-// En plataformas serverless/Render sin credenciales de Service Account quemadas, 
-// podemos inicializar Firebase Admin con las Application Default Credentials
-// o simplemente usando projectId.
+/**
+ * Inicialización de Firebase Admin SDK.
+ *
+ * Soporta dos modos:
+ * 1. PRODUCCIÓN (Render/Railway): usar FIREBASE_SERVICE_ACCOUNT_JSON con el JSON
+ *    completo del Service Account descargado desde Firebase Console.
+ * 2. DESARROLLO LOCAL: usar Application Default Credentials (ADC) configuradas
+ *    con `gcloud auth application-default login`, o pasar FIREBASE_PROJECT_ID.
+ *
+ * IMPORTANTE: El prefijo VITE_ es del bundler frontend — no usar para variables del backend.
+ */
 if (!admin.apps.length) {
-    admin.initializeApp({
-        // Recomendación: Al subir a Render, se deben pasar los secretos por variables de entorno
-        // o usar la configuración predeterminada si el proyecto es público, pero
-        // para la verificación de tokens, el projectId es lo más importante.
-        projectId: process.env.VITE_FIREBASE_PROJECT_ID || 'facturacion-electronica-api',
-        storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || 'facturacion-electronica-api.firebasestorage.app'
-    });
+    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    const storageBucket = process.env.FIREBASE_STORAGE_BUCKET || 'facturacion-electronica-api.firebasestorage.app';
+
+    if (serviceAccountJson) {
+        // Modo producción: Service Account explícito
+        try {
+            const serviceAccount = JSON.parse(serviceAccountJson);
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+                storageBucket
+            });
+            console.log('✅ Firebase Admin inicializado con Service Account.');
+        } catch (e) {
+            console.error('❌ FIREBASE_SERVICE_ACCOUNT_JSON no es un JSON válido:', e);
+            throw new Error('Configuración de Firebase Admin inválida.');
+        }
+    } else {
+        // Modo desarrollo: Application Default Credentials (ADC)
+        const projectId = process.env.FIREBASE_PROJECT_ID || 'facturacion-electronica-api';
+        admin.initializeApp({
+            projectId,
+            storageBucket
+        });
+        console.warn(
+            '⚠️  Firebase Admin inicializado con ADC (modo desarrollo). ' +
+            'Configura FIREBASE_SERVICE_ACCOUNT_JSON para producción.'
+        );
+    }
 }
 
 export default admin;

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "npx prisma db push --accept-data-loss && node dist/server.js",
+    "start": "npx prisma migrate deploy && node dist/server.js",
     "test": "jest",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push"
@@ -55,7 +55,8 @@
     "xml-crypto": "^6.1.2",
     "xmlbuilder2": "^4.0.3",
     "xmldom": "^0.6.0",
-    "xmldsigjs": "^2.8.5"
+    "xmldsigjs": "^2.8.5",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -69,7 +70,11 @@
     "@vitejs/plugin-react": "^5.1.4",
     "jest": "^30.2.0",
     "prisma": "^7.4.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^7.13.1",
     "supertest": "^7.2.2",
+    "ts-jest": "^29.4.9",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1"

@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prismaClient';
+import { encrypt } from '../utils/encryptionService';
 
 export class ConfiguracionController {
     /**
      * Endpoint: GET /api/configuracion
      * Obtiene los datos de configuración del emisor logueado,
-     * sin exponer las contraseñas reales ni archivos, 
+     * sin exponer las contraseñas reales ni archivos,
      * solo flags indicando si existen.
      */
     static async getConfiguracion(req: Request, res: Response) {
@@ -24,6 +25,7 @@ export class ConfiguracionController {
                 id: emisor.id,
                 nombre: emisor.nombre,
                 identificacion: emisor.identificacion,
+                codigoActividad: emisor.codigoActividad,
                 usuarioAtv: emisor.usuarioAtv,
                 hasPasswordAtv: Boolean(emisor.passwordAtv),
                 hasCertificado: Boolean(emisor.certificadoP12),
@@ -37,19 +39,22 @@ export class ConfiguracionController {
 
     /**
      * Endpoint: PUT /api/configuracion
-     * Actualiza los datos textuales (ATV, nombre, etc)
+     * Actualiza los datos textuales (ATV, nombre, etc).
+     * Las credenciales sensibles se cifran con AES-256-GCM antes de guardar.
      */
     static async updateConfiguracion(req: Request, res: Response) {
         try {
             const emisorId = req.user!.uid;
-            const { nombre, identificacion, usuarioAtv, passwordAtv } = req.body;
+            const { nombre, identificacion, codigoActividad, usuarioAtv, passwordAtv } = req.body;
 
             // Construir payload dinámico (no sobreescribir con blancos)
             const updateData: any = {};
             if (nombre) updateData.nombre = nombre;
             if (identificacion) updateData.identificacion = identificacion;
+            if (codigoActividad) updateData.codigoActividad = codigoActividad;
             if (usuarioAtv) updateData.usuarioAtv = usuarioAtv;
-            if (passwordAtv) updateData.passwordAtv = passwordAtv; // TODO: En una app real, esto debe encriptarse en BD
+            // [SEC-01] Cifrar la contraseña ATV antes de guardar en la BD
+            if (passwordAtv) updateData.passwordAtv = encrypt(passwordAtv);
 
             await prisma.emisorCredenciales.update({
                 where: { id: emisorId },
@@ -66,6 +71,7 @@ export class ConfiguracionController {
     /**
      * Endpoint: POST /api/configuracion/certificado
      * Recibe por 'multipart/form-data' el archivo físico (.p12) y su PIN.
+     * El PIN se cifra con AES-256-GCM antes de guardarse.
      */
     static async uploadCertificado(req: Request, res: Response) {
         try {
@@ -83,11 +89,14 @@ export class ConfiguracionController {
             // Convertir Node Buffer a Uint8Array que Prisma necesita para el target db.Bytes
             const uint8ArrayBuffer = new Uint8Array(req.file.buffer);
 
+            // [SEC-01] Cifrar el PIN antes de guardarlo
+            const pinCifrado = encrypt(pinCertificado);
+
             await prisma.emisorCredenciales.update({
                 where: { id: emisorId },
                 data: {
                     certificadoP12: uint8ArrayBuffer,
-                    pinCertificado: pinCertificado
+                    pinCertificado: pinCifrado
                 }
             });
 

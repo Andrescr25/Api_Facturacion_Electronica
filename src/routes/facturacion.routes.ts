@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { FacturacionController } from '../controllers/FacturacionController';
-import { requireApiKeyAndRateLimit } from '../middleware/apiKeyValidation';
+import { requireApiKeyAndRateLimit } from '../middlewares/apiKeyValidation';
 
 const router = Router();
 

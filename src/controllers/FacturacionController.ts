@@ -1,13 +1,14 @@
 import { Request, Response } from 'express';
 import { FacturacionService } from '../services/FacturacionService';
 import { CreacionFacturaRequest } from '../models/FacturaTypes';
+import { FacturaSchema } from '../validators/facturaSchema';
 import prisma from '../utils/prismaClient';
 
 export class FacturacionController {
 
     /**
      * Endpoint: POST /api/facturas/emitir
-     * Body: { emisorId: "uuid", factura: CreacionFacturaRequest }
+     * Body: { factura: CreacionFacturaRequest }
      */
     static async emitirFactura(req: Request, res: Response) {
         try {
@@ -18,11 +19,16 @@ export class FacturacionController {
                 return res.status(400).json({ error: 'Parámetros inválidos. Requiere objeto factura.' });
             }
 
-            // Validar tipos numéricos, si no Express los recibe como Strings
-            const parsedFactura = factura as CreacionFacturaRequest;
+            // [VAL-01] Validación de schema con Zod antes de procesar
+            const validation = FacturaSchema.safeParse(factura);
+            if (!validation.success) {
+                return res.status(400).json({
+                    error: 'Payload de factura inválido',
+                    detalle: validation.error.flatten()
+                });
+            }
 
-            // Iniciar orquestación del flujo de Hacienda
-            const resultadoRespuesta = await FacturacionService.emitirFacturaElectronica(emisorId, parsedFactura);
+            const resultadoRespuesta = await FacturacionService.emitirFacturaElectronica(emisorId, validation.data as CreacionFacturaRequest);
 
             return res.status(202).json({
                 message: 'Comprobante electrónico procesado exitosamente hacia el Ministerio de Hacienda',
@@ -38,19 +44,35 @@ export class FacturacionController {
         }
     }
 
+    /**
+     * Endpoint: GET /api/facturas/:clave/pdf
+     * Redirige al PDF en Firebase Storage.
+     * [SEC-02] Verifica que el documento pertenece al emisor autenticado.
+     */
     static async descargarPDF(req: Request, res: Response) {
         try {
             const clave = req.params.clave as string;
+            const emisorId = req.user!.uid;
+
             if (!clave) {
                 return res.status(400).json({ error: 'La clave numérica es obligatoria.' });
             }
 
             const doc = await prisma.documentoElectronico.findUnique({
                 where: { claveNumerica: clave },
-                select: { pdfUrl: true }
+                select: { pdfUrl: true, emisorId: true }
             });
 
-            if (!doc || !doc.pdfUrl) {
+            if (!doc) {
+                return res.status(404).json({ error: 'Comprobante no encontrado.' });
+            }
+
+            // [SEC-02] Tenant isolation: verificar ownership
+            if (doc.emisorId !== emisorId) {
+                return res.status(403).json({ error: 'Acceso denegado: este comprobante no pertenece a tu cuenta.' });
+            }
+
+            if (!doc.pdfUrl) {
                 return res.status(404).json({ error: 'El PDF no está disponible. No se generó o no existe el comprobante en la nube.' });
             }
 
@@ -64,10 +86,13 @@ export class FacturacionController {
     /**
      * Endpoint: GET /api/facturas/:clave/xml
      * Descarga el XML firmado del comprobante electrónico.
+     * [SEC-02] Verifica que el documento pertenece al emisor autenticado.
      */
     static async descargarXML(req: Request, res: Response) {
         try {
             const clave = req.params.clave as string;
+            const emisorId = req.user!.uid;
+
             if (!clave) {
                 return res.status(400).json({ error: 'La clave numérica es obligatoria.' });
             }
@@ -77,7 +102,16 @@ export class FacturacionController {
                 include: { xmlAlmacen: true }
             });
 
-            if (!doc || !doc.xmlAlmacen?.xmlFirmado) {
+            if (!doc) {
+                return res.status(404).json({ error: 'Comprobante no encontrado.' });
+            }
+
+            // [SEC-02] Tenant isolation: verificar ownership
+            if (doc.emisorId !== emisorId) {
+                return res.status(403).json({ error: 'Acceso denegado: este comprobante no pertenece a tu cuenta.' });
+            }
+
+            if (!doc.xmlAlmacen?.xmlFirmado) {
                 return res.status(404).json({ error: 'El XML firmado no está disponible para esta clave.' });
             }
 
@@ -91,19 +125,35 @@ export class FacturacionController {
 
     /**
      * Endpoint: GET /api/facturas
-     * Lista el historial de facturas del emisor
+     * Lista el historial de facturas del emisor con paginación.
+     * [OPS-04] Soporta query params: page (default 1), limit (default 20, max 100)
      */
     static async listarFacturas(req: Request, res: Response) {
         try {
             const emisorId = req.user!.uid;
 
-            const documentos = await prisma.documentoElectronico.findMany({
-                where: { emisorId },
-                orderBy: { fechaEmision: 'desc' },
-                take: 50 // Limit to latest 50 for performance
-            });
+            // [OPS-04] Paginación
+            const page = Math.max(1, parseInt(req.query.page as string) || 1);
+            const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+            const skip = (page - 1) * limit;
 
-            return res.json(documentos);
+            const [documentos, total] = await Promise.all([
+                prisma.documentoElectronico.findMany({
+                    where: { emisorId },
+                    orderBy: { fechaEmision: 'desc' },
+                    skip,
+                    take: limit
+                }),
+                prisma.documentoElectronico.count({ where: { emisorId } })
+            ]);
+
+            return res.json({
+                data: documentos,
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
+            });
         } catch (error: any) {
             console.error('Error Controller - ListarFacturas:', error);
             return res.status(500).json({ error: 'Error al listar las facturas', detalle: error.message });
@@ -111,21 +161,21 @@ export class FacturacionController {
     }
 
     /**
-     * Endpoint: POST /api/facturas/tiquete
+     * Endpoint: POST /api/facturas/tiquete/emitir
      */
     static async emitirTiquete(req: Request, res: Response) {
         return FacturacionController.procesarDocumento(req, res, '04');
     }
 
     /**
-     * Endpoint: POST /api/facturas/nota-credito
+     * Endpoint: POST /api/facturas/nota-credito/emitir
      */
     static async emitirNotaCredito(req: Request, res: Response) {
         return FacturacionController.procesarDocumento(req, res, '03');
     }
 
     /**
-     * Endpoint: POST /api/facturas/nota-debito
+     * Endpoint: POST /api/facturas/nota-debito/emitir
      */
     static async emitirNotaDebito(req: Request, res: Response) {
         return FacturacionController.procesarDocumento(req, res, '02');
@@ -138,8 +188,17 @@ export class FacturacionController {
             if (!factura) {
                 return res.status(400).json({ error: 'Parámetros inválidos. Requiere objeto factura.' });
             }
-            const parsedFactura = factura as CreacionFacturaRequest;
-            const resultadoRespuesta = await FacturacionService.emitirFacturaElectronica(emisorId, parsedFactura, tipoDocumento);
+
+            // [VAL-01] Validación Zod
+            const validation = FacturaSchema.safeParse(factura);
+            if (!validation.success) {
+                return res.status(400).json({
+                    error: 'Payload de factura inválido',
+                    detalle: validation.error.flatten()
+                });
+            }
+
+            const resultadoRespuesta = await FacturacionService.emitirFacturaElectronica(emisorId, validation.data as CreacionFacturaRequest, tipoDocumento);
 
             return res.status(202).json({
                 message: 'Comprobante electrónico procesado exitosamente',
