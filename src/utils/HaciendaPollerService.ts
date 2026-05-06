@@ -1,7 +1,6 @@
 import cron from 'node-cron';
 import axios from 'axios';
-import fs from 'fs';
-import path from 'path';
+import admin from './firebaseAdmin';
 import { HaciendaAuthService } from './HaciendaAuthService';
 import { EmailNotificationService } from './EmailNotificationService';
 import prisma from './prismaClient';
@@ -89,10 +88,14 @@ export class HaciendaPollerService {
                             const receptorEmail = logReceptor?.resultadoJson;
 
                             if (receptorEmail && receptorEmail !== 'SIN_CORREO') {
-                                const pdfPath = path.join(__dirname, `../../public/pdfs/${doc.claveNumerica}.pdf`);
+                                const bucket = admin.storage().bucket();
+                                const file = bucket.file(`pdfs/${doc.claveNumerica}.pdf`);
                                 let pdfBuffer: Buffer = Buffer.from('');
-                                if (fs.existsSync(pdfPath)) {
-                                    pdfBuffer = fs.readFileSync(pdfPath);
+                                try {
+                                    const [buffer] = await file.download();
+                                    pdfBuffer = buffer;
+                                } catch (e: any) {
+                                    console.error('PDF no encontrado en Storage para envio por correo', e.message);
                                 }
 
                                 const xmlFirmadoData = doc.xmlAlmacen?.xmlFirmado || '';

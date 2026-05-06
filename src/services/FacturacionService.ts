@@ -3,8 +3,7 @@ import { HaciendaXmlGenerator } from '../utils/HaciendaXmlGenerator';
 import { HaciendaSigner } from '../utils/HaciendaSigner';
 import { HaciendaAuthService } from '../utils/HaciendaAuthService';
 import axios from 'axios';
-import fs from 'fs';
-import path from 'path';
+import admin from './firebaseAdmin';
 import { PdfGeneratorService } from '../utils/PdfGeneratorService';
 import prisma from '../utils/prismaClient';
 
@@ -56,22 +55,25 @@ export class FacturacionService {
                 }
             });
 
-            // 4.5 Generar PDF y almacenarlo localmente (Carpeta temporal o estática)
+            // 4.5 Generar PDF y almacenarlo en Firebase Storage
             try {
                 const pdfBuffer = await PdfGeneratorService.generarFacturaPDF(request, emisor, clave, consecutivo, tipoDocumento);
-                const pdfDir = path.join(__dirname, '../../public/pdfs');
-                if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
+                
+                const bucket = admin.storage().bucket();
+                const file = bucket.file(`pdfs/${clave}.pdf`);
+                await file.save(pdfBuffer, {
+                    metadata: { contentType: 'application/pdf' }
+                });
+                await file.makePublic();
+                const pdfUrl = file.publicUrl();
 
-                const pdfPath = path.join(pdfDir, `${clave}.pdf`);
-                fs.writeFileSync(pdfPath, pdfBuffer);
-
-                // Actualizar DB con el URL Local del PDF
+                // Actualizar DB con el URL de Firebase
                 await prisma.documentoElectronico.update({
                     where: { id: documentoBD.id },
-                    data: { pdfUrl: `/pdfs/${clave}.pdf` }
+                    data: { pdfUrl: pdfUrl }
                 });
             } catch (pdfErr: any) {
-                console.error("Error generando PDF preliminar, omitiendo falla no crítica...", pdfErr.message);
+                console.error("Error subiendo PDF a Firebase Storage, omitiendo falla no crítica...", pdfErr.message);
             }
 
             // ==========================================

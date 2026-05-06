@@ -38,10 +38,6 @@ export class FacturacionController {
         }
     }
 
-    /**
-     * Endpoint: GET /api/facturas/:clave/pdf
-     * Descarga la representación gráfica del comprobante electrónico.
-     */
     static async descargarPDF(req: Request, res: Response) {
         try {
             const { clave } = req.params;
@@ -49,16 +45,17 @@ export class FacturacionController {
                 return res.status(400).json({ error: 'La clave numérica es obligatoria.' });
             }
 
-            const fs = require('fs');
-            const path = require('path');
+            const doc = await prisma.documentoElectronico.findUnique({
+                where: { claveNumerica: clave },
+                select: { pdfUrl: true }
+            });
 
-            const pdfPath = path.join(__dirname, '../../public/pdfs', `${clave}.pdf`);
-
-            if (!fs.existsSync(pdfPath)) {
-                return res.status(404).json({ error: 'El PDF no está disponible. No se generó o no existe el comprobante.' });
+            if (!doc || !doc.pdfUrl) {
+                return res.status(404).json({ error: 'El PDF no está disponible. No se generó o no existe el comprobante en la nube.' });
             }
 
-            return res.download(pdfPath, `Factura_${clave}.pdf`);
+            // El frontend o usuario descargará directamente desde Firebase Storage
+            return res.redirect(doc.pdfUrl);
         } catch (error: any) {
             return res.status(500).json({ error: 'Error procesando la descarga', detalle: error.message });
         }
