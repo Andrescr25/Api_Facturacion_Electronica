@@ -1,5 +1,6 @@
 import { FileText, CheckCircle, XCircle, Clock, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import styles from './Dashboard.module.css';
 
 export default function Dashboard() {
@@ -15,12 +16,12 @@ export default function Dashboard() {
     useEffect(() => {
         const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
         Promise.all([
-            fetch(`${API_URL}/api/dashboard/stats`).then(res => res.json()),
-            fetch(`${API_URL}/api/dashboard/recent`).then(res => res.json())
+            axios.get(`${API_URL}/api/dashboard/stats`),
+            axios.get(`${API_URL}/api/dashboard/recent`)
         ])
-            .then(([statsData, recentData]) => {
-                setStats(statsData);
-                setRecent(Array.isArray(recentData) ? recentData : []);
+            .then(([statsRes, recentRes]) => {
+                setStats(statsRes.data || { facturasEmitidas: 0, aceptadas: 0, rechazadas: 0, pendientes: 0 });
+                setRecent(Array.isArray(recentRes.data) ? recentRes.data : []);
                 setLoading(false);
             })
             .catch(err => {
