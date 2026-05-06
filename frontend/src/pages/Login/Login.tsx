@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Zap, Chrome } from 'lucide-react';
+import { Zap, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../../config/firebase';
@@ -53,7 +53,7 @@ export default function Login() {
                     Inicia sesión para gestionar tu integración de facturación electrónica
                 </p>
 
-                {error && <div style={{ color: 'red', marginBottom: '1rem', fontSize: '0.9rem', textAlign: 'center' }}>{error}</div>}
+                {error && <div style={{ color: 'var(--color-danger)', background: 'var(--color-danger-bg)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 'var(--radius-md)', padding: '10px 14px', marginBottom: '1rem', fontSize: '0.85rem', textAlign: 'center' }}>{error}</div>}
 
                 <div className={styles.formGroup}>
                     <label className={styles.label}>Correo Electrónico</label>
@@ -84,9 +84,9 @@ export default function Login() {
                 </button>
 
                 <div style={{ display: 'flex', alignItems: 'center', margin: '1.5rem 0' }}>
-                    <div style={{ flex: 1, backgroundColor: '#e2e8f0', height: '1px' }}></div>
-                    <span style={{ margin: '0 10px', color: '#64748b', fontSize: '0.85rem' }}>o</span>
-                    <div style={{ flex: 1, backgroundColor: '#e2e8f0', height: '1px' }}></div>
+                    <div style={{ flex: 1, backgroundColor: 'var(--border-color)', height: '1px' }}></div>
+                    <span style={{ margin: '0 10px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>o</span>
+                    <div style={{ flex: 1, backgroundColor: 'var(--border-color)', height: '1px' }}></div>
                 </div>
 
                 <button
@@ -95,12 +95,14 @@ export default function Login() {
                     onClick={handleGoogleLogin}
                     style={{
                         width: '100%', padding: '0.75rem', borderRadius: '8px',
-                        border: '1px solid #cbd5e1', backgroundColor: 'white',
+                        border: '1px solid var(--border-color-light)',
+                        backgroundColor: 'var(--bg-elevated)',
                         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                        fontSize: '0.95rem', fontWeight: 500, color: '#334155'
+                        fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-primary)',
+                        transition: 'background 120ms ease'
                     }}
                 >
-                    <Chrome size={18} />
+                    <Globe size={17} />
                     Continuar con Google
                 </button>
 

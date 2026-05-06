@@ -1,7 +1,11 @@
 node_modules
-# Keep environment variables out of version control
 .env
 
+# Backend compiled output
+/dist
+
+# Prisma generated
 /src/generated/prisma
 
-/src/generated/prisma
+# Firebase cache
+.firebase

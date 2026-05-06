@@ -4,16 +4,18 @@
     justify-content: center;
     min-height: 100vh;
     background: var(--bg-body);
+    background-image:
+        radial-gradient(ellipse 60% 50% at 50% -10%, rgba(59,130,246,0.1) 0%, transparent 70%);
 }
 
 .loginCard {
     width: 100%;
     max-width: 420px;
     background: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color-light);
+    border-radius: var(--radius-xl);
     padding: var(--space-2xl);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,0.03) inset;
 }
 
 .brand {
@@ -29,15 +31,18 @@
 }
 
 .brandName {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
 }
 
 .subtitle {
     text-align: center;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
     margin-bottom: var(--space-xl);
+    line-height: 1.6;
 }
 
 .formGroup {
@@ -48,46 +53,61 @@
 }
 
 .label {
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: var(--text-secondary);
+    letter-spacing: 0.02em;
 }
 
 .input {
-    background: var(--bg-body);
+    background: var(--bg-input);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     padding: 10px 14px;
     border-radius: var(--radius-md);
     font-size: 0.88rem;
     width: 100%;
+    outline: none;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input::placeholder {
+    color: var(--text-muted);
 }
 
 .input:focus {
-    outline: none;
-    border-color: var(--color-primary);
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px var(--color-primary-subtle);
 }
 
 .loginBtn {
     width: 100%;
-    padding: 12px;
+    padding: 11px;
     background: var(--color-primary);
     color: white;
     border: none;
     border-radius: var(--radius-md);
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     margin-top: var(--space-md);
-    transition: background var(--transition-fast);
+    transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+    letter-spacing: 0.01em;
 }
 
-.loginBtn:hover {
+.loginBtn:hover:not(:disabled) {
     background: var(--color-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px var(--color-primary-glow);
+}
+
+.loginBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .footer {
     text-align: center;
     margin-top: var(--space-lg);
-    font-size: 0.8rem;
-    color: var(--text-muted);
+    font-size: 0.75rem;
+    color: var(--text-faint);
 }

@@ -275,7 +275,7 @@ export default function Playground() {
                     </div>
                     <select
                         onChange={handlePresetChange}
-                        style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
+                        className={styles.presetSelect}
                     >
                         {presets.map((preset, idx) => (
                             <option key={preset.name} value={idx}>{preset.name}</option>
@@ -301,7 +301,7 @@ export default function Playground() {
                     </div>
 
                     <div className={styles.urlBar}>
-                        <div style={{ padding: '0 10px', backgroundColor: '#f1f5f9', color: '#64748b', fontSize: '0.85rem', display: 'flex', alignItems: 'center', borderRight: '1px solid var(--border)' }}>
+                        <div className={styles.headerLabel}>
                             Header
                         </div>
                         <input
