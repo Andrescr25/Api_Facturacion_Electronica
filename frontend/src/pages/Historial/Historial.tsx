@@ -23,7 +23,8 @@ export default function Historial() {
         const fetchFacturas = async () => {
             try {
                 setLoading(true);
-                const res = await axios.get(`http://localhost:3000/api/facturas?emisorId=${emisorIdMock}`);
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+                const res = await axios.get(`${API_URL}/api/facturas?emisorId=${emisorIdMock}`);
                 setFacturas(res.data);
             } catch (error) {
                 console.error("Error fetching facturas", error);
@@ -45,12 +46,14 @@ export default function Historial() {
 
     const handleDownloadPDF = (clave: string | null) => {
         if (!clave) return alert("Clave no disponible");
-        window.open(`http://localhost:3000/api/facturas/${clave}/pdf`, '_blank');
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        window.open(`${API_URL}/api/facturas/${clave}/pdf`, '_blank');
     };
 
     const handleDownloadXML = (clave: string | null) => {
         if (!clave) return alert("Clave no disponible");
-        window.open(`http://localhost:3000/api/facturas/${clave}/xml`, '_blank');
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        window.open(`${API_URL}/api/facturas/${clave}/xml`, '_blank');
     };
 
     const badgeClass = (estado: string) => {

@@ -3,6 +3,8 @@ import { Upload, Shield } from 'lucide-react';
 import axios from 'axios';
 import styles from './Configuracion.module.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 export default function Configuracion() {
     // Basic Info State
     const [nombre, setNombre] = useState('');
@@ -25,7 +27,7 @@ export default function Configuracion() {
     const loadConfig = async () => {
         try {
             setLoading(true);
-            const res = await axios.get('http://localhost:3000/api/configuracion');
+            const res = await axios.get(`${API_URL}/api/configuracion`);
             const data = res.data;
             setNombre(data.nombre || '');
             setIdentificacion(data.identificacion || '');
@@ -46,7 +48,7 @@ export default function Configuracion() {
 
     const handleSaveInfo = async () => {
         try {
-            await axios.put('http://localhost:3000/api/configuracion', {
+            await axios.put(`${API_URL}/api/configuracion`, {
                 nombre, identificacion, usuarioAtv, passwordAtv
             });
             alert('Datos del emisor actualizados correctamente.');
@@ -88,7 +90,7 @@ export default function Configuracion() {
         formData.append('pinCertificado', pinCertificadoInput);
 
         try {
-            await axios.post('http://localhost:3000/api/configuracion/certificado', formData, {
+            await axios.post(`${API_URL}/api/configuracion/certificado`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }

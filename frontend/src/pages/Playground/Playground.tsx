@@ -171,9 +171,10 @@ export default function Playground() {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
                 const [resCat, resConf] = await Promise.all([
-                    axios.get('http://localhost:3000/api/catalogos'),
-                    axios.get('http://localhost:3000/api/configuracion')
+                    axios.get(`${API_URL}/api/catalogos`),
+                    axios.get(`${API_URL}/api/configuracion`)
                 ]);
                 setCatalogos(resCat.data);
                 setEmisorConfig(resConf.data);
@@ -223,10 +224,10 @@ export default function Playground() {
                 }
             }
 
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
             const config: any = {
                 method,
-                // Ensure we call the backend at port 3000
-                url: url.startsWith('http') ? url : `http://localhost:3000${url.startsWith('/') ? '' : '/'}${url}`,
+                url: url.startsWith('http') ? url : `${API_URL}${url.startsWith('/') ? '' : '/'}${url}`,
                 headers: {
                     'Content-Type': 'application/json',
                     ...(authKey ? { 'Authorization': `Bearer ${authKey}` } : {})

@@ -13,9 +13,10 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
         Promise.all([
-            fetch('http://localhost:3000/api/dashboard/stats').then(res => res.json()),
-            fetch('http://localhost:3000/api/dashboard/recent').then(res => res.json())
+            fetch(`${API_URL}/api/dashboard/stats`).then(res => res.json()),
+            fetch(`${API_URL}/api/dashboard/recent`).then(res => res.json())
         ])
             .then(([statsData, recentData]) => {
                 setStats(statsData);
@@ -89,7 +90,7 @@ export default function Dashboard() {
                 <div className={styles.quickStart}>
                     <span className={styles.codeLabel}>Emitir tu primera factura</span>
                     <div className={styles.codeBlock}>
-                        <pre>{`curl -X POST http://localhost:3000/api/facturas/emitir \\
+                        <pre>{`curl -X POST ${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/facturas/emitir \\
   -H "Authorization: Bearer TU_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{

@@ -3,6 +3,8 @@ import { Plus, Copy, Trash2, Key } from 'lucide-react';
 import axios from 'axios';
 import styles from './ApiKeys.module.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 interface ApiKey {
     id: string;
     nombre: string;
@@ -22,7 +24,7 @@ export default function ApiKeys() {
     const fetchKeys = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(`http://localhost:3000/api/keys?emisorId=${emisorIdMock}`);
+            const res = await axios.get(`${API_URL}/api/keys?emisorId=${emisorIdMock}`);
             setKeys(res.data);
         } catch (error) {
             console.error('Error fetching API keys', error);
@@ -47,7 +49,7 @@ export default function ApiKeys() {
         }
 
         try {
-            await axios.post('http://localhost:3000/api/keys', {
+            await axios.post(`${API_URL}/api/keys`, {
                 emisorId: emisorIdMock,
                 nombre: newKeyName.trim()
             });
@@ -64,7 +66,7 @@ export default function ApiKeys() {
         if (!confirm('¿Estás seguro de que deseas revocar esta API Key? Esta acción cortará el acceso de las integraciones asociadas inmediatamente.')) return;
 
         try {
-            await axios.delete(`http://localhost:3000/api/keys/${id}`);
+            await axios.delete(`${API_URL}/api/keys/${id}`);
             fetchKeys();
         } catch (error) {
             console.error('Error revoking API key', error);
