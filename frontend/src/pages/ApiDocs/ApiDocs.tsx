@@ -16,11 +16,8 @@ const endpoints: Endpoint[] = [
         method: 'POST',
         path: '/api/facturas/emitir',
         description: 'Emitir una factura electronica',
-        params: [
-            { name: 'emisorId', type: 'string (UUID)', required: true, description: 'ID del emisor registrado en el sistema' },
-        ],
+        params: [],
         requestBody: `{
-  "emisorId": "uuid-del-emisor",
   "factura": {
     "receptor": {
       "nombre": "Empresa Receptora SA",
@@ -77,13 +74,10 @@ const endpoints: Endpoint[] = [
         method: 'POST',
         path: '/api/facturas/tiquete/emitir',
         description: 'Emitir un Tiquete Electronico (Tipo 04) para consumidores finales',
-        params: [
-            { name: 'emisorId', type: 'string (UUID)', required: true, description: 'ID del emisor registrado en el sistema' },
-        ],
+        params: [],
         requestBody: `// Mismo formato base que Factura Electrónica,
 // pero el objeto "receptor" es opcional.
 {
-  "emisorId": "uuid-del-emisor",
   "factura": {
     "condicionVenta": "01",
     "medioPago": ["01"],
@@ -122,12 +116,9 @@ const endpoints: Endpoint[] = [
         method: 'POST',
         path: '/api/facturas/nota-credito/emitir',
         description: 'Emitir una Nota de Credito Electronica (Tipo 03) para anular o corregir facturas',
-        params: [
-            { name: 'emisorId', type: 'string (UUID)', required: true, description: 'ID del emisor' },
-        ],
+        params: [],
         requestBody: `// Mismo formato que la Factura, pero REQUIERE el array "referencias"
 {
-  "emisorId": "uuid-del-emisor",
   "factura": {
     ... // Receptor, lineas, etc (Ver Factura)
     "referencias": [
@@ -146,12 +137,9 @@ const endpoints: Endpoint[] = [
         method: 'POST',
         path: '/api/facturas/nota-debito/emitir',
         description: 'Emitir una Nota de Debito Electronica (Tipo 02) para cobrar montos adicionales',
-        params: [
-            { name: 'emisorId', type: 'string (UUID)', required: true, description: 'ID del emisor' },
-        ],
+        params: [],
         requestBody: `// Requiere el array "referencias" apuntando a la Factura/Tiquete original
 {
-  "emisorId": "uuid-del-emisor",
   "factura": {
     ... // Receptor, lineas, etc
     "referencias": [
@@ -267,7 +255,7 @@ export default function ApiDocs() {
             <div className={styles.baseUrl}>
                 <Server size={18} style={{ color: 'var(--text-muted)' }} />
                 <span className={styles.baseUrlLabel}>Base URL</span>
-                <span className={styles.baseUrlValue}>https://api.facturacr.com</span>
+                <span className={styles.baseUrlValue}>https://api-facturacion-electronica.onrender.com</span>
             </div>
 
             {endpoints.map((ep) => (
