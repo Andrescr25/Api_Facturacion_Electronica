@@ -40,7 +40,7 @@ export class FacturacionController {
 
     static async descargarPDF(req: Request, res: Response) {
         try {
-            const { clave } = req.params;
+            const clave = req.params.clave as string;
             if (!clave) {
                 return res.status(400).json({ error: 'La clave numérica es obligatoria.' });
             }

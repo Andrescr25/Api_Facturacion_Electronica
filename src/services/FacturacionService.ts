@@ -3,7 +3,7 @@ import { HaciendaXmlGenerator } from '../utils/HaciendaXmlGenerator';
 import { HaciendaSigner } from '../utils/HaciendaSigner';
 import { HaciendaAuthService } from '../utils/HaciendaAuthService';
 import axios from 'axios';
-import admin from './firebaseAdmin';
+import admin from '../utils/firebaseAdmin';
 import { PdfGeneratorService } from '../utils/PdfGeneratorService';
 import prisma from '../utils/prismaClient';
 
