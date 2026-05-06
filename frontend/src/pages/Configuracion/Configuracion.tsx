@@ -11,6 +11,7 @@ export default function Configuracion() {
     const [identificacion, setIdentificacion] = useState('');
     const [usuarioAtv, setUsuarioAtv] = useState('');
     const [passwordAtv, setPasswordAtv] = useState('');
+    const [codigoActividad, setCodigoActividad] = useState('');
 
     // Status Flags from DB
     const [hasPasswordAtv, setHasPasswordAtv] = useState(false);
@@ -32,6 +33,7 @@ export default function Configuracion() {
             setNombre(data.nombre || '');
             setIdentificacion(data.identificacion || '');
             setUsuarioAtv(data.usuarioAtv || '');
+            setCodigoActividad(data.codigoActividad || '');
             setHasPasswordAtv(data.hasPasswordAtv);
             setHasCertificado(data.hasCertificado);
             setHasPinCertificado(data.hasPinCertificado);
@@ -49,7 +51,7 @@ export default function Configuracion() {
     const handleSaveInfo = async () => {
         try {
             await axios.put(`${API_URL}/api/configuracion`, {
-                nombre, identificacion, usuarioAtv, passwordAtv
+                nombre, identificacion, usuarioAtv, passwordAtv, codigoActividad
             });
             alert('Datos del emisor actualizados correctamente.');
             setPasswordAtv(''); // Clear form field for security
@@ -125,6 +127,12 @@ export default function Configuracion() {
                         <div className={styles.formGroup}>
                             <label className={styles.label}>Cédula Jurídica / Física</label>
                             <input className={styles.input} value={identificacion} onChange={e => setIdentificacion(e.target.value)} placeholder="3101654321" />
+                        </div>
+                    </div>
+                    <div className={styles.formRow}>
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Código de Actividad (6 dígitos)</label>
+                            <input className={styles.input} value={codigoActividad} onChange={e => setCodigoActividad(e.target.value)} placeholder="123456" maxLength={6} />
                         </div>
                     </div>
                     <div className={styles.formRow}>
