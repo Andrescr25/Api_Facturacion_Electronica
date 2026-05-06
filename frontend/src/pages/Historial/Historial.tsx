@@ -17,14 +17,12 @@ export default function Historial() {
     const [loading, setLoading] = useState(true);
     const [filtroEstado, setFiltroEstado] = useState('TODOS');
     const [busqueda, setBusqueda] = useState('');
-    const emisorIdMock = "tu-emisor-id"; // TODO: Obtain from AuthContext
-
     useEffect(() => {
         const fetchFacturas = async () => {
             try {
                 setLoading(true);
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-                const res = await axios.get(`${API_URL}/api/facturas?emisorId=${emisorIdMock}`);
+                const res = await axios.get(`${API_URL}/api/facturas`);
                 setFacturas(res.data);
             } catch (error) {
                 console.error("Error fetching facturas", error);

@@ -8,8 +8,11 @@ export class DashboardController {
      */
     static async getStats(req: Request, res: Response) {
         try {
+            const emisorId = req.user!.uid;
+
             const result = await prisma.documentoElectronico.groupBy({
                 by: ['estadoInterno'],
+                where: { emisorId },
                 _count: {
                     id: true
                 }
@@ -18,7 +21,6 @@ export class DashboardController {
             const total = result.reduce((acc, curr) => acc + curr._count.id, 0);
             const aceptadas = result.find(c => c.estadoInterno === 'ACEPTADO')?._count.id || 0;
             const rechazadas = result.find(c => c.estadoInterno === 'RECHAZADO')?._count.id || 0;
-            // Cualquier estado que no sea ACEPTADO o RECHAZADO podría considerarse pendiente para esta métrica general
             const pendientes = total - aceptadas - rechazadas;
 
             return res.json({
@@ -42,7 +44,10 @@ export class DashboardController {
      */
     static async getRecent(req: Request, res: Response) {
         try {
+            const emisorId = req.user!.uid;
+
             const documentos = await prisma.documentoElectronico.findMany({
+                where: { emisorId },
                 take: 5,
                 orderBy: {
                     fechaEmision: 'desc'

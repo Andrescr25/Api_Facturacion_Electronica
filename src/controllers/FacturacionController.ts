@@ -11,10 +11,11 @@ export class FacturacionController {
      */
     static async emitirFactura(req: Request, res: Response) {
         try {
-            const { emisorId, factura } = req.body;
+            const emisorId = req.user!.uid;
+            const { factura } = req.body;
 
-            if (!emisorId || !factura) {
-                return res.status(400).json({ error: 'Parámetros inválidos. Requiere emisorId y objeto factura.' });
+            if (!factura) {
+                return res.status(400).json({ error: 'Parámetros inválidos. Requiere objeto factura.' });
             }
 
             // Validar tipos numéricos, si no Express los recibe como Strings
@@ -97,11 +98,7 @@ export class FacturacionController {
      */
     static async listarFacturas(req: Request, res: Response) {
         try {
-            const emisorId = req.query.emisorId as string;
-
-            if (!emisorId) {
-                return res.status(400).json({ error: 'El parámetro emisorId es obligatorio' });
-            }
+            const emisorId = req.user!.uid;
 
             const documentos = await prisma.documentoElectronico.findMany({
                 where: { emisorId },
@@ -139,9 +136,10 @@ export class FacturacionController {
 
     private static async procesarDocumento(req: Request, res: Response, tipoDocumento: '01' | '02' | '03' | '04') {
         try {
-            const { emisorId, factura } = req.body;
-            if (!emisorId || !factura) {
-                return res.status(400).json({ error: 'Parámetros inválidos. Requiere emisorId y objeto factura.' });
+            const emisorId = req.user!.uid;
+            const { factura } = req.body;
+            if (!factura) {
+                return res.status(400).json({ error: 'Parámetros inválidos. Requiere objeto factura.' });
             }
             const parsedFactura = factura as CreacionFacturaRequest;
             const resultadoRespuesta = await FacturacionService.emitirFacturaElectronica(emisorId, parsedFactura, tipoDocumento);

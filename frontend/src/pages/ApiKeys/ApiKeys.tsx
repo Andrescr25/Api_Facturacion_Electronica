@@ -19,12 +19,11 @@ export default function ApiKeys() {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [newKeyName, setNewKeyName] = useState('');
-    const emisorIdMock = "tu-emisor-id"; // TODO: get from AuthContext
 
     const fetchKeys = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(`${API_URL}/api/keys?emisorId=${emisorIdMock}`);
+            const res = await axios.get(`${API_URL}/api/keys`);
             setKeys(res.data);
         } catch (error) {
             console.error('Error fetching API keys', error);
@@ -50,7 +49,6 @@ export default function ApiKeys() {
 
         try {
             await axios.post(`${API_URL}/api/keys`, {
-                emisorId: emisorIdMock,
                 nombre: newKeyName.trim()
             });
             setNewKeyName('');

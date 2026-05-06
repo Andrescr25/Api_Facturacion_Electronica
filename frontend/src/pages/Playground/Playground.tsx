@@ -4,7 +4,6 @@ import axios from 'axios';
 import styles from './Playground.module.css';
 
 const defaultBody = `{
-  "emisorId": "tu-emisor-id",
   "factura": {
     "receptor": {
       "nombre": "Cliente de Prueba",
@@ -58,7 +57,6 @@ const presets = [
         method: 'POST',
         url: '/api/facturas/tiquete/emitir',
         body: `{
-  "emisorId": "tu-emisor-id",
   "factura": {
     "condicionVenta": "01",
     "medioPago": ["01"],
@@ -95,7 +93,6 @@ const presets = [
         method: 'POST',
         url: '/api/facturas/nota-credito/emitir',
         body: `{
-  "emisorId": "tu-emisor-id",
   "factura": {
     "condicionVenta": "01",
     "medioPago": ["01"],
@@ -178,11 +175,6 @@ export default function Playground() {
                 ]);
                 setCatalogos(resCat.data);
                 setEmisorConfig(resConf.data);
-
-                // Inject real emisorId into default body
-                if (resConf.data?.id) {
-                    setBody(prev => prev.replace('tu-emisor-id', resConf.data.id));
-                }
             } catch (err) {
                 console.error("Error fetching playground initial data:", err);
             }
@@ -196,12 +188,7 @@ export default function Playground() {
         setMethod(presets[idx].method);
         setUrl(presets[idx].url);
 
-        // Dynamically inject emisorId if we have it
-        let newBody = presets[idx].body;
-        if (emisorConfig?.id) {
-            newBody = newBody.replace('tu-emisor-id', emisorConfig.id);
-        }
-        setBody(newBody);
+        setBody(presets[idx].body);
         setResponse(null); // Clear previous response when changing templates
     };
 

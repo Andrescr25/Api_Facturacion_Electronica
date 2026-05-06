@@ -9,13 +9,7 @@ export class ApiKeyController {
      */
     static async listarApiKeys(req: Request, res: Response) {
         try {
-            // TODO: Obtain emisorId from session/auth (using a mock ID for now until full integration)
-            // Emisor "tu-emisor-id" is used in the playground
-            const emisorId = req.query.emisorId as string;
-
-            if (!emisorId) {
-                return res.status(400).json({ error: 'Emisor ID es requerido para listar las keys' });
-            }
+            const emisorId = req.user!.uid;
 
             const keys = await prisma.apiKey.findMany({
                 where: { emisorId },
@@ -43,10 +37,11 @@ export class ApiKeyController {
      */
     static async generarApiKey(req: Request, res: Response) {
         try {
-            const { emisorId, nombre } = req.body;
+            const emisorId = req.user!.uid;
+            const { nombre } = req.body;
 
-            if (!emisorId || !nombre) {
-                return res.status(400).json({ error: 'Emisor ID y Nombre son requeridos' });
+            if (!nombre) {
+                return res.status(400).json({ error: 'Nombre es requerido' });
             }
 
             // Validar que el emisor exista

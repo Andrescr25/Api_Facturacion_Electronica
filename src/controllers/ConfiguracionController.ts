@@ -10,7 +10,7 @@ export class ConfiguracionController {
      */
     static async getConfiguracion(req: Request, res: Response) {
         try {
-            const emisorId = req.query.emisorId as string || "tu-emisor-id"; // TODO: Mover a auth
+            const emisorId = req.user!.uid;
 
             const emisor = await prisma.emisorCredenciales.findUnique({
                 where: { id: emisorId }
@@ -41,7 +41,7 @@ export class ConfiguracionController {
      */
     static async updateConfiguracion(req: Request, res: Response) {
         try {
-            const emisorId = req.query.emisorId as string || "tu-emisor-id";
+            const emisorId = req.user!.uid;
             const { nombre, identificacion, usuarioAtv, passwordAtv } = req.body;
 
             // Construir payload dinámico (no sobreescribir con blancos)
@@ -69,7 +69,7 @@ export class ConfiguracionController {
      */
     static async uploadCertificado(req: Request, res: Response) {
         try {
-            const emisorId = req.query.emisorId as string || "tu-emisor-id";
+            const emisorId = req.user!.uid;
 
             if (!req.file) {
                 return res.status(400).json({ error: 'No se subió ningún archivo .p12' });
