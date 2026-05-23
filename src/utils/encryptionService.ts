@@ -10,7 +10,7 @@ import crypto from 'crypto';
  */
 
 const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 16;  // 128 bits
+const IV_LENGTH = 12;  // 96 bits (Recomendado por NIST)
 const TAG_LENGTH = 16; // 128 bits (GCM auth tag)
 
 function getKey(): Buffer {
@@ -86,5 +86,5 @@ export function decrypt(ciphertext: string): string {
 export function isEncrypted(value: string): boolean {
     if (!value) return false;
     const parts = value.split(':');
-    return parts.length === 3 && parts[0].length === 32 && parts[1].length === 32;
+    return parts.length === 3 && (parts[0].length === 24 || parts[0].length === 32) && parts[1].length === 32;
 }

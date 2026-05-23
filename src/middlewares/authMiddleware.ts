@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import admin from '../utils/firebaseAdmin';
 import prisma from '../utils/prismaClient';
+import { logger } from '../utils/logger';
 
 // Extender la interfaz Request para incluir el user
 declare global {
@@ -23,8 +25,10 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
         // 1. Si es una API Key generada por nosotros (empieza con sk_live_)
         if (token.startsWith('sk_live_')) {
+            const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
             const apiKey = await prisma.apiKey.findFirst({
-                where: { key: token, activa: true }
+                where: { key: hashedToken, activa: true }
             });
 
             if (!apiKey) {
@@ -32,7 +36,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
             }
 
             // Actualizar último uso (fire and forget)
-            prisma.apiKey.update({ where: { id: apiKey.id }, data: { ultimoUso: new Date() } }).catch(console.error);
+            prisma.apiKey.update({ where: { id: apiKey.id }, data: { ultimoUso: new Date() } }).catch(err => logger.error(`Error actualizando uso de API Key: ${err.message}`));
 
             req.user = { uid: apiKey.emisorId };
             return next();
@@ -42,8 +46,8 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
         const decodedToken = await admin.auth().verifyIdToken(token);
         req.user = decodedToken;
         next();
-    } catch (error) {
-        console.error('Error de autenticación:', error);
+    } catch (error: any) {
+        logger.error(`Error de autenticación: ${error.message}`);
         return res.status(401).json({ error: 'Token de autenticación expirado o inválido.' });
     }
 };

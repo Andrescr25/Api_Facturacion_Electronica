@@ -18,20 +18,24 @@ export class ApiKeyController {
                 select: {
                     id: true,
                     nombre: true,
-                    key: true,
+                    last4: true,
                     activa: true,
                     fechaCreacion: true,
                     ultimoUso: true
                 }
             });
 
-            // [SEC-03] Truncar la key — nunca exponer el valor completo en el listing
-            const keysTruncadas = keys.map(k => ({
-                ...k,
-                key: `sk_live_...${k.key.slice(-4)}`
+            // [SEC-03] Truncar la key — la DB solo guarda el hash y los últimos 4 caracteres
+            const keysParaFrontend = keys.map(k => ({
+                id: k.id,
+                nombre: k.nombre,
+                key: `sk_live_...${k.last4 || '****'}`,
+                activa: k.activa,
+                fechaCreacion: k.fechaCreacion,
+                ultimoUso: k.ultimoUso
             }));
 
-            return res.json(keysTruncadas);
+            return res.json(keysParaFrontend);
         } catch (error: any) {
             console.error('Error ApiKeyController - listarApiKeys:', error);
             return res.status(500).json({ error: 'Error al listar API Keys', detalle: error.message });
@@ -64,12 +68,15 @@ export class ApiKeyController {
             // Generar key única tipo Stripe
             const randomString = crypto.randomBytes(24).toString('hex');
             const newKey = `sk_live_${randomString}`;
+            const last4 = newKey.slice(-4);
+            const hashedKey = crypto.createHash('sha256').update(newKey).digest('hex');
 
             const apiKey = await prisma.apiKey.create({
                 data: {
                     emisorId,
                     nombre,
-                    key: newKey,
+                    key: hashedKey, // [SEC-03] Guardar solo el HASH en BD
+                    last4: last4,
                     activa: true
                 }
             });

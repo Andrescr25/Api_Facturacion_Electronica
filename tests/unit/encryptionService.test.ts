@@ -40,7 +40,7 @@ describe('encryptionService.encrypt + decrypt', () => {
         const cifrado = encrypt('test');
         const partes = cifrado.split(':');
         expect(partes).toHaveLength(3);
-        expect(partes[0]).toHaveLength(32); // IV en hex (16 bytes)
+        expect(partes[0]).toHaveLength(24); // IV en hex (12 bytes - NIST estándar)
         expect(partes[1]).toHaveLength(32); // Auth tag en hex (16 bytes)
     });
 

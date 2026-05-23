@@ -4,6 +4,7 @@ import admin from './firebaseAdmin';
 import { HaciendaAuthService } from './HaciendaAuthService';
 import { EmailNotificationService } from './EmailNotificationService';
 import prisma from './prismaClient';
+import { logger } from './logger';
 
 /**
  * Poller Background de Hacienda CR
@@ -16,10 +17,10 @@ export class HaciendaPollerService {
      * Inicia el trabajador Cronológico. Ejecuta la validación cada 2 minutos.
      */
     static start() {
-        console.log('✅ Poller de Hacienda Inicializado (Cron: */5 * * * *)');
+        logger.info('✅ Poller de Hacienda Inicializado (Cron: */5 * * * *)');
 
         cron.schedule('*/5 * * * *', async () => {
-            console.log('⏳ Ejecutando revisión periódica de Comprobantes Pendientes...');
+            logger.info('⏳ Ejecutando revisión periódica de Comprobantes Pendientes...');
             await this.revisarPendientes();
         });
     }
@@ -40,7 +41,7 @@ export class HaciendaPollerService {
 
             if (pendientes.length === 0) return;
 
-            console.log(`🔍 Procesando ${pendientes.length} de los documentos pendientes (batch de ${BATCH_SIZE}).`);
+            logger.info(`🔍 Procesando ${pendientes.length} de los documentos pendientes (batch de ${BATCH_SIZE}).`);
 
             // 2. Iterar sobre pendientes (En Producción alto volumen, se usan colas Batch)
             for (const doc of pendientes) {
@@ -80,7 +81,7 @@ export class HaciendaPollerService {
                             })
                         ]);
 
-                        console.log(`✅ Documento ${doc.claveNumerica} finalizado con estado: ${nuevoEstadoStr}`);
+                        logger.info(`✅ Documento ${doc.claveNumerica} finalizado con estado: ${nuevoEstadoStr}`);
 
                         // ==========================================
                         // FASE FINAL: Enviar correo electrónico
@@ -97,7 +98,7 @@ export class HaciendaPollerService {
                                     const [buffer] = await file.download();
                                     pdfBuffer = buffer;
                                 } catch (e: any) {
-                                    console.error('PDF no encontrado en Storage para envio por correo', e.message);
+                                    logger.error(`PDF no encontrado en Storage para envio por correo: ${e.message}`);
                                 }
 
                                 const xmlFirmadoData = doc.xmlAlmacen?.xmlFirmado || '';
@@ -122,7 +123,7 @@ export class HaciendaPollerService {
                                 );
                             }
                         } catch (mailError: any) {
-                            console.error(`⚠️ Documento actualizado pero el correo falló: ${mailError.message}`);
+                            logger.error(`⚠️ Documento actualizado pero el correo falló: ${mailError.message}`);
                         }
                     } else {
                         // Si está 'procesando' o similar, solo registramos intento.
@@ -130,12 +131,12 @@ export class HaciendaPollerService {
                             where: { id: doc.id },
                             data: { intentosEnvio: { increment: 1 } }
                         });
-                        console.log(`⏱️ Documento ${doc.claveNumerica} sigue en procesamiento interno en Hacienda.`);
+                        logger.info(`⏱️ Documento ${doc.claveNumerica} sigue en procesamiento interno en Hacienda.`);
                     }
 
                 } catch (error: any) {
                     // Fallo al consultar (Ej. 404 por clave no encontrada aún)
-                    console.error(`❌ Error consultando comprobante ${doc.claveNumerica}:`, error.message);
+                    logger.error(`❌ Error consultando comprobante ${doc.claveNumerica}: ${error.message}`);
 
                     const nuevoIntentos = doc.intentosEnvio + 1;
                     const statusUpdates: any = { intentosEnvio: { increment: 1 } };
@@ -160,8 +161,8 @@ export class HaciendaPollerService {
                 }
             }
 
-        } catch (globalError) {
-            console.error('CRITICAL: Error maestro ejecutando el Poller de Hacienda', globalError);
+        } catch (globalError: any) {
+            logger.error(`CRITICAL: Error maestro ejecutando el Poller de Hacienda: ${globalError.message || globalError}`);
         }
     }
 }

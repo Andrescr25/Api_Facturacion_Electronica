@@ -1,4 +1,4 @@
-import { CreacionFacturaRequest } from '../models/FacturaTypes';
+import { CreacionFacturaRequest, MensajeReceptorRequest } from '../models/FacturaTypes';
 import { HaciendaXmlGenerator } from '../utils/HaciendaXmlGenerator';
 import { HaciendaSigner } from '../utils/HaciendaSigner';
 import { HaciendaAuthService } from '../utils/HaciendaAuthService';
@@ -173,22 +173,205 @@ export class FacturacionService {
             }
 
         } catch (error: any) {
-            // Si hubo fallo crítico de red o Hacienda está caído, el doc queda marcado como RECHAZADO
-            // para que no quede atascado en ENVIADO fantasma quemando el consecutivo.
+            // Determinar si es un fallo temporal de red / timeout / servidor caído
+            const esErrorTemporalDeRed = !error.response || (error.response.status >= 500 && error.response.status <= 599);
+
+            // Obtener el estado actual en base de datos para no pisarlo
+            const docActual = await prisma.documentoElectronico.findUnique({
+                where: { id: documentoBD.id },
+                select: { estadoInterno: true }
+            });
+
+            const nuevoEstado = (esErrorTemporalDeRed && docActual?.estadoInterno === 'ENVIADO') 
+                ? 'ENVIADO' 
+                : 'RECHAZADO';
+
             await prisma.documentoElectronico.update({
                 where: { id: documentoBD.id },
-                data: { estadoInterno: 'RECHAZADO' }
+                data: { estadoInterno: nuevoEstado }
             });
 
             await prisma.logsTransaccion.create({
                 data: {
                     documentoId: documentoBD.id,
-                    accion: 'Fallo al firmar o enviar (Rechazo automático)',
+                    accion: esErrorTemporalDeRed ? 'Fallo temporal de conexión (mantiene ENVIADO)' : 'Fallo definitivo en fase de envío',
                     resultadoJson: error.response?.data ? JSON.stringify(error.response.data) : error.message
                 }
             });
 
             throw new Error(`Error en fase de envío: ${error.message}`);
+        }
+    }
+
+    /**
+     * Procesa la solicitud completa para emitir un Mensaje de Receptor (05, 06, 07)
+     * para facturas de compras recibidas de proveedores.
+     */
+    static async emitirMensajeReceptor(
+        emisorId: string,
+        request: MensajeReceptorRequest
+    ): Promise<{ status: number; message: string; clave: string; documentoId: string }> {
+
+        // 1. Validar emisor
+        const emisor = await prisma.emisorCredenciales.findUnique({
+            where: { id: emisorId }
+        });
+
+        if (!emisor) {
+            throw new Error('Emisor no encontrado o sin credenciales válidas');
+        }
+
+        // 2. Incrementar el consecutivo interno según el tipo de mensaje
+        // 1 (Aceptado) -> consecutivoCpce -> Tipo de documento '05'
+        // 2 (Aceptado Parcial) -> consecutivoCpce -> Tipo de documento '06'
+        // 3 (Rechazo) -> consecutivoRce -> Tipo de documento '07'
+        const tipoDocumento = request.mensaje === '1' ? '05' : request.mensaje === '2' ? '06' : '07';
+        
+        let updateData: any = {};
+        if (tipoDocumento === '05' || tipoDocumento === '06') {
+            updateData = { consecutivoCpce: { increment: 1 } };
+        } else {
+            updateData = { consecutivoRce: { increment: 1 } };
+        }
+
+        const emisorActualizado = await prisma.emisorCredenciales.update({
+            where: { id: emisorId },
+            data: updateData
+        });
+
+        const consecutivoReal = tipoDocumento === '07' 
+            ? emisorActualizado.consecutivoRce 
+            : emisorActualizado.consecutivoCpce;
+
+        // 3. Generar XML crudo
+        // Suponemos sucursal 1 caja 1 por defecto para recepciones si no se provee
+        const sucursal = 1;
+        const caja = 1;
+        
+        const { xml, clave, consecutivo } = HaciendaXmlGenerator.generarMensajeReceptorXML(
+            request,
+            consecutivoReal,
+            sucursal,
+            caja
+        );
+
+        // 4. Guardar en Base de Datos
+        const documentoBD = await prisma.documentoElectronico.create({
+            data: {
+                emisorId: emisor.id,
+                claveNumerica: clave,
+                numeroConsecutivo: consecutivo,
+                tipoDocumento: tipoDocumento,
+                montoTotal: request.totalFactura,
+                estadoInterno: 'CREADO',
+                xmlAlmacen: {
+                    create: { xmlGenerado: xml }
+                },
+                logs: {
+                    create: [
+                        { accion: 'Generación inicial del XML Mensaje Receptor 4.3' },
+                        { accion: 'DATOS_PROVEEDOR', resultadoJson: JSON.stringify({ emisor: request.numeroCedulaEmisor, receptor: request.numeroCedulaReceptor }) }
+                    ]
+                }
+            }
+        });
+
+        // 5. Firma y Envío
+        try {
+            await prisma.documentoElectronico.update({
+                where: { id: documentoBD.id },
+                data: { estadoInterno: 'FIRMANDO' }
+            });
+
+            if (!emisor.certificadoP12 || !emisor.pinCertificado) {
+                throw new Error('No hay .p12 configurado para firmar. Configure el certificado en Ajustes.');
+            }
+
+            // Firmar criptográficamente (pinCertificado viene cifrado, HaciendaSigner lo descifra)
+            const xmlFirmado = await HaciendaSigner.firmarXML(xml, emisor.certificadoP12, emisor.pinCertificado);
+
+            await prisma.xmlAlmacen.update({
+                where: { documentoId: documentoBD.id },
+                data: { xmlFirmado: xmlFirmado }
+            });
+
+            // Obtener Token de ATV
+            const tokenAtv = await HaciendaAuthService.obtenerToken(emisor.usuarioAtv, emisor.passwordAtv);
+
+            // Preparar payload de Recepción Hacienda
+            const payloadHacienda = {
+                clave: clave,
+                fecha: new Date().toISOString(),
+                emisor: {
+                    tipoIdentificacion: emisor.identificacion.length === 9 ? '01' : '02',
+                    numeroIdentificacion: emisor.identificacion
+                },
+                receptor: {
+                    tipoIdentificacion: request.numeroCedulaEmisor.length === 9 ? '01' : '02',
+                    numeroIdentificacion: request.numeroCedulaEmisor
+                },
+                comprobanteXml: xmlFirmado
+            };
+
+            await prisma.documentoElectronico.update({
+                where: { id: documentoBD.id },
+                data: { intentosEnvio: { increment: 1 }, estadoInterno: 'ENVIADO' }
+            });
+
+            const urlRecepcion = process.env.HACIENDA_API_URL || 'https://api.hacienda.go.cr/fe/recepcion';
+
+            const responseHacienda = await axios.post(urlRecepcion, payloadHacienda, {
+                headers: {
+                    'Authorization': `Bearer ${tokenAtv}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (responseHacienda.status === 202) {
+                await prisma.logsTransaccion.create({
+                    data: {
+                        documentoId: documentoBD.id,
+                        accion: 'Envío de Mensaje Receptor exitoso a Hacienda (Status 202)',
+                        resultadoJson: JSON.stringify(responseHacienda.headers)
+                    }
+                });
+
+                return {
+                    status: 202,
+                    message: 'El mensaje de receptor fue recibido por Hacienda y está en cola de procesamiento',
+                    clave: clave,
+                    documentoId: documentoBD.id
+                };
+            } else {
+                throw new Error(`Hacienda retornó status inesperado: ${responseHacienda.status}`);
+            }
+
+        } catch (error: any) {
+            const esErrorTemporalDeRed = !error.response || (error.response.status >= 500 && error.response.status <= 599);
+
+            const docActual = await prisma.documentoElectronico.findUnique({
+                where: { id: documentoBD.id },
+                select: { estadoInterno: true }
+            });
+
+            const nuevoEstado = (esErrorTemporalDeRed && docActual?.estadoInterno === 'ENVIADO') 
+                ? 'ENVIADO' 
+                : 'RECHAZADO';
+
+            await prisma.documentoElectronico.update({
+                where: { id: documentoBD.id },
+                data: { estadoInterno: nuevoEstado }
+            });
+
+            await prisma.logsTransaccion.create({
+                data: {
+                    documentoId: documentoBD.id,
+                    accion: esErrorTemporalDeRed ? 'Fallo temporal de conexión en Mensaje Receptor (mantiene ENVIADO)' : 'Fallo definitivo en fase de envío de Mensaje Receptor',
+                    resultadoJson: error.response?.data ? JSON.stringify(error.response.data) : error.message
+                }
+            });
+
+            throw new Error(`Error en fase de envío de Mensaje Receptor: ${error.message}`);
         }
     }
 }

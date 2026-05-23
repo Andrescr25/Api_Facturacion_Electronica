@@ -21,13 +21,13 @@ model EmisorCredenciales {
   passwordAtv     String
   certificadoP12  Bytes?
   pinCertificado  String?
-  consecutivoFe   Int      @default(1)
-  consecutivoNd   Int      @default(1)
-  consecutivoNc   Int      @default(1)
-  consecutivoTe   Int      @default(1)
-  consecutivoCce  Int      @default(1)
-  consecutivoCpce Int      @default(1)
-  consecutivoRce  Int      @default(1)
+  consecutivoFe   Int      @default(0)
+  consecutivoNd   Int      @default(0)
+  consecutivoNc   Int      @default(0)
+  consecutivoTe   Int      @default(0)
+  consecutivoCce  Int      @default(0)
+  consecutivoCpce Int      @default(0)
+  consecutivoRce  Int      @default(0)
   
   // Código de actividad económica (6 dígitos, requerido por Hacienda en el XML)
   codigoActividad String   @default("") @db.VarChar(6)
@@ -88,7 +88,8 @@ model ApiKey {
   emisorId        String
   emisor          EmisorCredenciales @relation(fields: [emisorId], references: [id], onDelete: Cascade)
   nombre          String
-  key             String   @unique
+  key             String   @unique // Almacenará el HASH (SHA-256) del token
+  last4           String   @db.VarChar(4) @default("0000") // Los últimos 4 caracteres para mostrar en el frontend
   activa          Boolean  @default(true)
   fechaCreacion   DateTime @default(now())
   ultimoUso       DateTime?

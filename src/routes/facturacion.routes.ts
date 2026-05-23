@@ -19,8 +19,10 @@ router.get('/:clave/xml', FacturacionController.descargarXML);
 // Historial de Facturas
 router.get('/', FacturacionController.listarFacturas);
 
-// Pendientes futuros:
-// router.get('/estado/:clave', FacturacionController.consultarEstado);
-// router.post('/recepcion-compras', FacturacionController.aceptarCompra);
+// Consulta de Estado en Tiempo Real
+router.get('/estado/:clave', requireApiKeyAndRateLimit, FacturacionController.consultarEstadoRealTime);
+
+// Mensaje de Receptor (Aceptación de Compras)
+router.post('/recepcion-compras', requireApiKeyAndRateLimit, FacturacionController.emitirMensajeReceptor);
 
 export default router;
