@@ -19,6 +19,12 @@ if (!admin.apps.length) {
         // Modo producción: Service Account explícito
         try {
             const serviceAccount = JSON.parse(serviceAccountJson);
+            
+            // Reemplazar '\\n' con saltos de línea reales para evitar errores de parseo PEM en entornos como Render
+            if (serviceAccount.private_key) {
+                serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+            }
+
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount),
                 storageBucket
